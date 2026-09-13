@@ -1,0 +1,11 @@
+export interface Address { id: string; label: string; line1: string; city: string; pincode: string; isDefault: boolean; deliveryInstructions?: string; recipientName?: string; recipientPhone?: string }
+export interface User { id: string; name: string; phone: string; addresses: Address[]; walletBalance: number; paymentMethods: string[] }
+export interface Product { id: string; name: string; size: string; category: string; price: number; mrp: number; tags: string[]; description: string; nextDeliveryDate: string; imageLabel: string }
+export interface CartItem { productId: string; quantity: number; oneTimeOrSubscription: 'one-time' | 'subscription' }
+export type SubscriptionStatus = 'Active' | 'Paused' | 'Cancelled'
+export interface Subscription { id: string; productId: string; planTier: 'Starter' | 'Family' | 'Bulk'; quantityPerDelivery: number; frequency: 'Daily' | 'Alternate Days' | 'Weekly' | 'Custom'; timeSlot: 'Morning' | 'Evening' | 'Morning + Evening'; startDate: string; durationType: 'Ongoing' | 'EndDate'; status: SubscriptionStatus; deliveryAddressId: string; paymentMethod: string; skippedDates: string[]; pausedRange?: { from: string; to: string }; nextDeliveryDate: string; createdDate: string }
+export type OrderStatus = 'Upcoming' | 'Delivered' | 'Cancelled'
+export interface Order { id: string; date: string; items: { productId: string; name: string; quantity: number; price: number }[]; itemTotal: number; deliveryFee: number; walletUsed: number; totalPaid: number; status: OrderStatus; deliveryAddress: string }
+export interface Invoice { id: string; orderId: string; gstin: string; sellerName: string; billedTo: string; lineItems: { name: string; quantity: number; rate: number; amount: number }[]; subtotal: number; cgst: number; sgst: number; total: number; paymentMode: string; dateGenerated: string }
+export interface Notification { id: string; type: 'delivery' | 'wallet' | 'promo' | 'skip' | 'renewal'; title: string; body: string; timestamp: string; isRead: boolean }
+export interface WalletTransaction { id: string; type: 'top-up' | 'payment' | 'cashback'; title: string; timestamp: string; amount: number; direction: 'credit' | 'debit' }
