@@ -1,7 +1,7 @@
 
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Check, CreditCard, Plus } from 'lucide-react-native';
+import { ArrowLeft, Check, CreditCard, Plus } from 'lucide-react-native';
 import { colors, SectionTitle } from '@/components/FreshComponents';
 import { useFreshStore } from '@/store/useFreshStore';
 
@@ -9,13 +9,14 @@ export default function PaymentScreen() {
   const { user } = useFreshStore();
 
   return (
-    <View className="flex-1 bg-[#F7F9FC] pt-[52px]">
+    <View className="flex-1 bg-[#F7F9FC]">
       <Pressable
-        className="px-5"
+        className="ml-4 mt-2"
         onPress={() => router.back()}
+        hitSlop={12}
       >
         <Text className="text-[32px] leading-[30px] text-[#111827]">
-          ‹
+          <ArrowLeft size={28} color="#111827" />
         </Text>
       </Pressable>
 

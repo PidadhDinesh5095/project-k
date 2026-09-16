@@ -2,7 +2,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { Check, Clock } from 'lucide-react-native';
+import { ArrowLeft, Check, Clock } from 'lucide-react-native';
 import { PrimaryButton, TrustBadgeRow } from '@/components/FreshComponents';
 import { useFreshStore } from '@/store/useFreshStore';
 import { formatDate } from '@/lib/cutoff';
@@ -82,11 +82,12 @@ export default function ProductDetailScreen() {
 
         {/* Back Button */}
         <Pressable
-          className="absolute left-5 top-[52px] h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="absolute left-5 top-[52px] ml-4 mt-2 h-9 w-9 items-center justify-center rounded-full bg-white"
           onPress={() => router.back()}
+          hitSlop={12}
         >
           <Text className="text-[24px] leading-[26px] text-[#111827]">
-            ‹
+            <ArrowLeft size={24} color="#111827" />
           </Text>
         </Pressable>
 

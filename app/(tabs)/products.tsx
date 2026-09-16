@@ -90,7 +90,7 @@ export default function ProductsScreen() {
     <View className="flex-1 bg-[#F7F9FC]">
 
       {/* Top Bar */}
-      <View className="flex-row items-center justify-between px-5 pt-[52px]">
+      <View className="flex-row items-center justify-between px-5">
         <Text className="text-[22px] font-extrabold text-[#111827]">
           Products
         </Text>

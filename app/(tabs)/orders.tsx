@@ -161,7 +161,7 @@ export default function OrdersScreen() {
       <View className="bg-[#F7F9FC]">
 
         {/* Top Bar */}
-        <View className="mb-3 px-5 pt-[52px]">
+        <View className="mb-3 px-5">
           <Text className="text-[22px] font-extrabold text-[#111827]">
             My Orders
           </Text>

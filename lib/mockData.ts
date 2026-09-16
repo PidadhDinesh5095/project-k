@@ -1,7 +1,7 @@
 import { Address, Invoice, Notification, Order, Product, Subscription, User, WalletTransaction } from '@/types/fresh';
 
 export const address: Address = { id: 'home', label: 'Home', line1: '12 Lake View Apartments, HSR Layout', city: 'Bangalore', pincode: '560102', isDefault: true };
-export const user: User = { id: 'u1', name: 'praveena', phone: '+91 9440028747', addresses: [address], walletBalance: 250, paymentMethods: ['UPI · ananya@okbank'] };
+export const user: User = { id: 'u1', name: 'praveena', firstName: 'praveena', phone: '+91 9440028747', addresses: [address], walletBalance: 250, paymentMethods: ['UPI · ananya@okbank'] };
 export const products: Product[] = [
   { id: 'buffalo', name: 'A3 Buffalo Milk', size: '500 ml', category: 'Milk', price: 63, mrp: 70, tags: ['A2 Protein', 'Farm Fresh', 'Rich and Creamy'], description: 'Rich, creamy milk sourced from grass-fed buffaloes.', nextDeliveryDate: '2026-09-08', imageLabel: 'MILK' },
   { id: 'cow', name: 'Toned Cow Milk', size: '500 ml', category: 'Milk', price: 54, mrp: 60, tags: ['Everyday', 'Light'], description: 'Fresh, balanced everyday milk for the whole family.', nextDeliveryDate: '2026-09-08', imageLabel: 'MILK' },

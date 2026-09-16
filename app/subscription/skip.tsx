@@ -2,7 +2,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Check, Repeat, SkipForward, X } from 'lucide-react-native';
+import { ArrowLeft, Check, Repeat, SkipForward, X } from 'lucide-react-native';
 import { colors, PrimaryButton, StatusPill } from '@/components/FreshComponents';
 import { useFreshStore } from '@/store/useFreshStore';
 import { formatDate } from '@/lib/cutoff';
@@ -111,13 +111,14 @@ export default function SkipDeliveryScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#F7F9FC] pt-[52px]">
+    <View className="flex-1 bg-[#F7F9FC]">
       <Pressable
-        className="px-5"
+        className="ml-4 mt-2"
         onPress={() => router.back()}
+        hitSlop={12}
       >
         <Text className="text-[32px] leading-[30px] text-[#111827]">
-          ‹
+          <ArrowLeft size={28} color="#111827" />
         </Text>
       </Pressable>
 

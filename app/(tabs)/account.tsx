@@ -66,7 +66,7 @@ export default function AccountScreen() {
     <View className="flex-1 bg-[#F7F9FC]">
 
       {/* Top Bar */}
-      <View className="mb-2 px-5 pt-[52px]">
+      <View className="mb-2 px-5">
         <Text className="text-[22px] font-extrabold text-[#111827]">
           Account
         </Text>

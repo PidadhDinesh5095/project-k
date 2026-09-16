@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useAppSelector } from '@/store/hooks';
+import { ArrowLeft } from 'lucide-react-native';
 
 const OTP_LENGTH = 4;
 const RESEND_SECONDS = 30;
@@ -84,9 +85,9 @@ export default function OtpScreen() {
       className="flex-1 bg-white"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View className="flex-1 pt-[52px]">
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text className="px-5 text-[32px] text-[#111827]">‹</Text>
+      <View className="flex-1">
+        <Pressable className="ml-4 mt-2" onPress={() => router.back()} hitSlop={12}>
+          <ArrowLeft size={28} color="#111827" />
         </Pressable>
 
         <View className="mt-5 flex-1 justify-between px-6 pb-8">

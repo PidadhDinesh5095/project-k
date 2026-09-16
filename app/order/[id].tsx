@@ -1,7 +1,7 @@
 
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { MapPin } from 'lucide-react-native';
+import { ArrowLeft, MapPin } from 'lucide-react-native';
 import {
   colors,
   PrimaryButton,
@@ -17,15 +17,16 @@ export default function OrderDetailScreen() {
   const order = orders.find((o) => o.id === id) ?? orders[0];
 
   return (
-    <View className="flex-1 bg-[#F7F9FC] pt-[52px]">
+    <View className="flex-1 bg-[#F7F9FC]">
 
       {/* Back Button */}
       <Pressable
-        className="px-5"
+        className="ml-4 mt-2"
         onPress={() => router.back()}
+        hitSlop={12}
       >
         <Text className="text-[32px] leading-[30px] text-[#111827]">
-          ‹
+          <ArrowLeft size={28} color="#111827" />
         </Text>
       </Pressable>
 

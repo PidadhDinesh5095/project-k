@@ -2,6 +2,7 @@
 import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import {
+  ArrowLeft,
   ChevronRight,
   Plus,
   ShieldCheck,
@@ -305,12 +306,11 @@ export function ScreenHeader({
   return (
     <View className="h-[54px] flex-row items-center justify-between border-b border-[#F1F5F9]">
       <Pressable
+        className="ml-4 mt-2"
         onPress={onBack}
         hitSlop={12}
       >
-        <Text className="w-[30px] text-[32px] leading-[30px] text-[#0F172A]">
-          {onBack ? '‹' : ''}
-        </Text>
+        {onBack ? <ArrowLeft size={22} color="#0F172A" /> : null}
       </Pressable>
 
       <Text className="text-[17px] font-extrabold text-[#0F172A]">

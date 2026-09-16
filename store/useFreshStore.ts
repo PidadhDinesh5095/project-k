@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
-import { addAddress, deleteAddress, updateAddress } from '@/store/slices/userSlice';
+import { addAddress, deleteAddress, updateAddress, updateProfile } from '@/store/slices/userSlice';
 import { addWalletMoney } from '@/store/slices/walletSlice';
 import { addNotification, clearNotifications, markNotificationRead } from '@/store/slices/notificationsSlice';
 import { addSubscription, removeSubscription, setActiveSubscription, updateSubscription } from '@/store/slices/subscriptionSlice';
 import { addOrder, updateOrderStatus } from '@/store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { Address, Notification, Order, OrderStatus, Subscription } from '@/types/fresh';
+import { Address, Notification, Order, OrderStatus, Subscription, User } from '@/types/fresh';
 
 export function useFreshStore() {
   const dispatch = useAppDispatch();
@@ -41,5 +41,13 @@ export function useFreshStore() {
     addAddress: useCallback((address: Omit<Address, 'id'>) => dispatch(addAddress(address)), [dispatch]),
     updateAddress: useCallback((address: Address) => dispatch(updateAddress(address)), [dispatch]),
     deleteAddress: useCallback((id: string) => dispatch(deleteAddress(id)), [dispatch]),
+    updateProfile: useCallback((profile: Pick<User, 'firstName' | 'lastName' | 'email' | 'birthDate'>) => {
+      dispatch(updateProfile({
+        firstName: profile.firstName ?? '',
+        lastName: profile.lastName,
+        email: profile.email,
+        birthDate: profile.birthDate ?? '',
+      }));
+    }, [dispatch]),
   };
 }

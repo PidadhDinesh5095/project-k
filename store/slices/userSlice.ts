@@ -4,12 +4,28 @@ import { Address, User } from '@/types/fresh';
 
 type UserState = User;
 
+type ProfileDetails = {
+  firstName: string;
+  lastName?: string;
+  email?: string;
+  birthDate: string;
+};
+
 const userSlice = createSlice({
   name: 'user',
   initialState: seededUser as UserState,
   reducers: {
     setPhone: (state, action: PayloadAction<string>) => {
       state.phone = action.payload;
+    },
+    updateProfile: (state, action: PayloadAction<ProfileDetails>) => {
+      state.firstName = action.payload.firstName;
+      state.lastName = action.payload.lastName;
+      state.email = action.payload.email;
+      state.birthDate = action.payload.birthDate;
+      state.name = [action.payload.firstName, action.payload.lastName]
+        .filter(Boolean)
+        .join(' ');
     },
     addAddress: (state, action: PayloadAction<Omit<Address, 'id'>>) => {
       state.addresses = [
@@ -34,5 +50,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setPhone, addAddress, updateAddress, deleteAddress } = userSlice.actions;
+export const { setPhone, updateProfile, addAddress, updateAddress, deleteAddress } = userSlice.actions;
 export default userSlice.reducer;
