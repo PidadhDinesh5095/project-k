@@ -72,7 +72,7 @@ export default function OnboardingScreen() {
         </ScrollView>
       </View>
 
-      <View className="flex-1 justify-around px-6 pb-8 pt-6">
+      <View className="flex-1 justify-between px-6 pb-8 pt-6">
         <View className="flex-row justify-center gap-1.5">
           {SLIDES.map((_, i) => (
             <View

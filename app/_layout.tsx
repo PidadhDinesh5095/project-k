@@ -11,12 +11,16 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <SafeAreaView
+        className="flex-1 bg-white"
+        edges={['top']}
+      >
         <StatusBar
           barStyle="dark-content"
           backgroundColor="#FFFFFF"
-          translucent={false}
+          translucent={true}
         />
+
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="+not-found" />
         </Stack>

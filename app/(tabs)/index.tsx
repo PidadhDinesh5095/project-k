@@ -1,4 +1,3 @@
-
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -19,15 +18,12 @@ import {
   Plus,
   Wallet,
 } from 'lucide-react-native';
-import {
-  SectionTitle,
-} from '@/components/FreshComponents';
+import { SectionTitle } from '@/components/FreshComponents';
 import { useFreshStore } from '@/store/useFreshStore';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 const HEADER_HEIGHT = SCREEN_H * 0.1;
-const BLUE_SCROLL_MIN_HEIGHT = SCREEN_H * 0.4;
 
 const BANNER_H_PADDING = 20;
 const BANNER_WIDTH = SCREEN_W - BANNER_H_PADDING * 2;
@@ -36,10 +32,15 @@ const AUTO_SCROLL_MS = 5000;
 
 const LOGO_URI = require('@/assets/images/logo_nbg.png');
 
+
 const bannerImages = [
-  { image: require('@/assets/images/onb-1.png') },
-  { image: require('@/assets/images/onb-2.png') },
-  { image: require('@/assets/images/onb-3.png') },
+  { image: require('@/assets/images/home-1.png') },
+  { image: require('@/assets/images/home-2.png') },
+  { image: require('@/assets/images/home-3.png') },
+  { image: require('@/assets/images/home-4.png') },
+  { image: require('@/assets/images/home-5.png') },
+  { image: require('@/assets/images/home-6.png') },
+  { image: require('@/assets/images/home-7.png') },
 ];
 
 const productImages: Record<string, string> = {
@@ -181,226 +182,199 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-white">
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#1E4FFF"
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
         translucent={false}
       />
 
-      <View
-        style={{ height: HEADER_HEIGHT }}
-        className="absolute left-0 right-0 top-0 z-10 w-full bg-[#1E4FFF]"
-      >
-        <SafeAreaView
-          edges={['top']}
-          className="flex-1"
-        >
-          <View className="flex-1 flex-row items-center justify-between px-5">
-
-            <Image
-              source={LOGO_URI}
-              className="h-8 w-8 rounded-[8px]"
-              resizeMode="contain"
-            />
-
-            <View className="flex-1 items-center px-3">
-              <Text
-                className="font-sans text-[15px] font-medium text-white"
-                numberOfLines={1}
-              >
-                {greeting}, {user.name}!
-              </Text>
-
-              <Text
-                className="mt-[2px] text-[11px] text-[#DCE6FF]"
-                numberOfLines={1}
-              >
-                {user.addresses?.[0]?.line1 ??
-                  user.addresses?.[0]?.city ??
-                  ''}
-              </Text>
-            </View>
-
-            <View className="w-8 items-end">
-              <Pressable
-                onPress={() => router.push('/notifications')}
-                hitSlop={10}
-              >
-                <Bell
-                  size={20}
-                  color="#FFFFFF"
-                />
-              </Pressable>
-            </View>
-
-          </View>
-        </SafeAreaView>
-      </View>
-
       <ScrollView
         className="flex-1"
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: HEADER_HEIGHT,
           paddingBottom: 100,
         }}
-        showsVerticalScrollIndicator={false}
       >
 
-        <View
-          style={{ minHeight: BLUE_SCROLL_MIN_HEIGHT }}
-          className="w-full rounded-b-[32px] bg-[#1E4FFF] pb-4"
-        >
+        <View className="w-full ">
 
-          <View className="mx-5 mt-4 rounded-[18px] bg-white p-[14px]">
+          <SafeAreaView edges={['top']}>
+            <View className="flex-row items-center justify-between px-5 pb-5">
 
-            <View className="flex-row items-center justify-between">
+              <Image
+                source={LOGO_URI}
 
-              <View className="flex-1">
-                <Text className="text-[14px] font-bold text-[#111827]">
-                  Orders for
+                className="h-11 w-11 "
+                resizeMode="contain"
+              />
+
+              <View className="flex-1 items-center ">
+                <Text
+                  className="font-sans text-[18px] font-extrabold "
+                  numberOfLines={1}
+                >
+                  {greeting}, {user.name}!
                 </Text>
 
-                <Text className="mt-[2px] text-[13px] font-semibold text-[#64748B]">
-                  {formatDisplayDate(selectedDate)}
+                <Text
+                  className="mt-[2px] text-[11px] text-[#32323366]"
+                  numberOfLines={1}
+                >
+                  {user.addresses?.[0]?.line1 ??
+                    user.addresses?.[0]?.city ??
+                    ''}
                 </Text>
               </View>
 
-              <Pressable
-                onPress={() => router.push('/wallet')}
-                className="flex-row items-center rounded-full bg-[#EEF3FF] px-3 py-2"
-                hitSlop={8}
-              >
-                <Wallet
-                  size={15}
-                  color="#1E4FFF"
-                />
-
-                <Text className="ml-1 text-[12px] font-bold text-[#1E4FFF]">
-                  ₹{safeWalletBalance.toFixed(2)}
-                </Text>
-              </Pressable>
+              <View className="w-8 items-end pr-2">
+                <Pressable
+                  onPress={() => router.push('/notifications')}
+                  hitSlop={10}
+                >
+                  <Bell
+                    size={25}
+                    color="#000000"
+                  />
+                </Pressable>
+              </View>
 
             </View>
+          </SafeAreaView>
 
-            <View className="mt-3 flex-row items-center justify-between">
+          <View className="px-5 pb-5">
+            <View className="rounded-[18px] bg-[#EEF3FF] pt-5">
 
-              <Pressable
-                onPress={() => changeDate(-1)}
-                className="h-[36px] w-[36px] items-center justify-center rounded-full bg-[#F1F5F9]"
-                hitSlop={8}
-              >
-                <ChevronLeft
-                  size={19}
-                  color="#1E4FFF"
-                />
-              </Pressable>
+              <View className="mt-3 flex-row items-center justify-between">
 
-              <View className="flex-1 items-center px-3">
+                <View className="h-[36px] w-[36px] pl-8 items-center justify-center">
+                  <Pressable
+                    onPress={() => changeDate(-1)}
+                    className="h-[36px] w-[36px] items-center justify-center rounded-full bg-[#2563EB]"
+                    hitSlop={8}
+                  >
+                    <ChevronLeft
+                      size={19}
+                      color="#ffffff"
+                    />
+                  </Pressable>
+                </View>
 
-                <Text className="text-[14px] font-bold text-[#111827]">
-                  {isToday
-                    ? 'Today'
-                    : formatDisplayDate(selectedDate)}
-                </Text>
+                <View className="flex-1 items-center px-3">
 
-                <Text className="mt-[2px] text-[11px] text-[#94A3B8]">
-                  Update by 10:00 PM
-                </Text>
+                  <Text className="text-[16px] font-bold text-[#111827]">
+                    {isToday
+                      ? 'Today'
+                      : formatDisplayDate(selectedDate)}
+                  </Text>
+
+                  <Text className="mt-[2px] text-[11px] text-[#94A3B8]">
+                    Update by 10:00 PM
+                  </Text>
+
+                </View>
+
+                <View className="h-[36px] w-[36px] pr-8 items-center justify-center">
+                  <Pressable
+                    onPress={() => changeDate(1)}
+                    className="h-[36px] w-[36px] items-center justify-center rounded-full bg-[#2563EB]"
+                    hitSlop={8}
+                  >
+                    <ChevronRight
+                      size={19}
+                      color="#ffffff"
+                    />
+                  </Pressable>
+                </View>
 
               </View>
 
-              <Pressable
-                onPress={() => changeDate(1)}
-                className="h-[36px] w-[36px] items-center justify-center rounded-full bg-[#F1F5F9]"
-                hitSlop={8}
-              >
-                <ChevronRight
-                  size={19}
-                  color="#1E4FFF"
-                />
-              </Pressable>
+              <Text className="mt-4 text-center text-[13px] text-[#94A3B8]">
+                {hasDeliveryOnSelectedDate && product
+                  ? `${product.name} · ${subscription.timeSlot}`
+                  : 'No Scheduled deliveries'}
+              </Text>
 
-            </View>
+              <View className="mt-4 h-[54px] flex-row overflow-hidden border-t border-[#DCE5FF]">
 
-            <Text className="mt-4 text-center text-[13px] text-[#94A3B8]">
-              {hasDeliveryOnSelectedDate && product
-                ? `${product.name} · ${subscription.timeSlot}`
-                : 'No Scheduled deliveries'}
-            </Text>
+                <Pressable
+                  className="flex-1 flex-row items-center rounded-bl-full justify-center bg-[#EEF3FF]"
+                >
+                  <View className="h-[45%] w-[13%] items-center justify-center ">
+                    <Pause
+                      size={15}
+                      color="#1E4FFF"
+                      strokeWidth={2.5}
+                    />
+                  </View>
 
-            <View className="mt-4 flex-row items-center justify-between border-t border-[#F1F5F9] pt-3">
+                  <Text className="ml-3 text-[17px] font-medium text-[#1E4FFF]">
+                    Pause Orders
+                  </Text>
+                </Pressable>
 
-              <Pressable
-                className="flex-row items-center gap-1"
-              >
-                <Pause
-                  size={14}
-                  color="#1E4FFF"
-                />
+                <View className="w-[1px] bg-[#DCE5FF]" />
 
-                <Text className="text-[13px] font-bold text-[#1E4FFF]">
-                  Pause Orders
-                </Text>
-              </Pressable>
+                <Pressable
+                  className="flex-1 flex-row items-center justify-center rounded-br-full bg-[#EEF3FF]"
+                  onPress={() => router.push('/products')}
+                >
+                  <Plus
+                    size={24}
+                    color="#111827"
+                    strokeWidth={2}
+                  />
 
-              <Pressable
-                className="flex-row items-center gap-1"
-                onPress={() => router.push('/products')}
-              >
-                <Plus
-                  size={14}
-                  color="#111827"
-                />
+                  <Text className="ml-3 text-[17px] font-medium text-[#111827]">
+                    Add Items
+                  </Text>
+                </Pressable>
 
-                <Text className="text-[13px] font-bold text-[#111827]">
-                  Add Items
-                </Text>
-              </Pressable>
+              </View>
 
             </View>
 
           </View>
 
-          <View className="mt-4">
+        </View>
 
-            <ScrollView
-              ref={bannerScroll}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={handleBannerMomentumEnd}
-              scrollEventThrottle={16}
-            >
-              {bannerImages.map((banner, i) => (
-                <View
-                  key={i}
-                  style={{ width: SCREEN_W }}
-                  className="items-center justify-center px-5"
-                >
-                  <Image
-                    source={banner.image}
-                    style={{
-                      width: BANNER_WIDTH,
-                      height: BANNER_HEIGHT,
-                    }}
-                    className="rounded-[24px]"
-                  />
-                </View>
-              ))}
-            </ScrollView>
+        <View className="mt-1">
 
-            <View className="mt-3 flex-row items-center justify-center gap-[6px]">
-              {bannerImages.map((_, i) => (
-                <View
-                  key={i}
-                  className={
-                    i === activeBanner
-                      ? 'h-[4px] w-[18px] rounded-full bg-white'
-                      : 'h-[4px] w-[8px] rounded-full bg-white/40'
-                  }
+          <ScrollView
+            ref={bannerScroll}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handleBannerMomentumEnd}
+            scrollEventThrottle={16}
+          >
+            {bannerImages.map((banner, i) => (
+              <View
+                key={i}
+                style={{ width: SCREEN_W }}
+                className="items-center justify-center px-5"
+              >
+                <Image
+                  source={banner.image}
+                  style={{
+                    width: BANNER_WIDTH,
+                    height: BANNER_HEIGHT,
+                  }}
+                  className="rounded-[24px]"
                 />
-              ))}
-            </View>
+              </View>
+            ))}
+          </ScrollView>
 
+          <View className="mt-3 flex-row items-center justify-center gap-[6px]">
+            {bannerImages.map((_, i) => (
+              <View
+                key={i}
+                className={
+                  i === activeBanner
+                    ? 'h-[4px] w-[18px] rounded-full bg-[#1E4FFF]'
+                    : 'h-[4px] w-[8px] rounded-full bg-[#CBD5E1]'
+                }
+              />
+            ))}
           </View>
 
         </View>
@@ -422,9 +396,7 @@ export default function HomeScreen() {
             {products.slice(0, 6).map((p) => (
               <Pressable
                 key={p.id}
-                onPress={() =>
-                  router.push(`/product/${p.id}`)
-                }
+                onPress={() => router.push(`/product/${p.id}`)}
               >
                 <Image
                   source={{
@@ -445,12 +417,11 @@ export default function HomeScreen() {
           />
 
           <View className="mt-1 flex-row flex-wrap justify-between">
+
             {products.slice(0, 6).map((p) => (
               <Pressable
                 key={p.id}
-                onPress={() =>
-                  router.push(`/product/${p.id}`)
-                }
+                onPress={() => router.push(`/product/${p.id}`)}
                 style={{ width: '48%' }}
                 className="mb-4 rounded-[16px] border border-[#E2E8F0] bg-white p-[10px]"
               >
@@ -477,8 +448,10 @@ export default function HomeScreen() {
                   {p.description ??
                     `${p.size} · Fresh daily`}
                 </Text>
+
               </Pressable>
             ))}
+
           </View>
 
           <Pressable
@@ -512,4 +485,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-

@@ -8,11 +8,7 @@ export default {
     scheme: 'myapp',
     userInterfaceStyle: 'automatic',
 
-    androidStatusBar: {
-      backgroundColor: '#FFFFFF',
-      barStyle: 'dark-content',
-      translucent: false,
-    },
+    
 
     ios: {
       supportsTablet: true,
