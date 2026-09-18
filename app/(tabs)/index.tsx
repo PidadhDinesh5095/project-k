@@ -1,3 +1,4 @@
+
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -16,14 +17,11 @@ import {
   ChevronRight,
   Pause,
   Plus,
-  Wallet,
 } from 'lucide-react-native';
 import { SectionTitle } from '@/components/FreshComponents';
 import { useFreshStore } from '@/store/useFreshStore';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-
-const HEADER_HEIGHT = SCREEN_H * 0.1;
+const { width: SCREEN_W } = Dimensions.get('window');
 
 const BANNER_H_PADDING = 20;
 const BANNER_WIDTH = SCREEN_W - BANNER_H_PADDING * 2;
@@ -31,7 +29,6 @@ const BANNER_HEIGHT = BANNER_WIDTH * 1.15;
 const AUTO_SCROLL_MS = 5000;
 
 const LOGO_URI = require('@/assets/images/logo_nbg.png');
-
 
 const bannerImages = [
   { image: require('@/assets/images/home-1.png') },
@@ -41,28 +38,53 @@ const bannerImages = [
   { image: require('@/assets/images/home-5.png') },
   { image: require('@/assets/images/home-6.png') },
   { image: require('@/assets/images/home-7.png') },
+  { image: require('@/assets/images/home-8.png') },
 ];
 
-const productImages: Record<string, string> = {
-  buffalo:
-    'https://images.pexels.com/photos/5967316/pexels-photo-5967316.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  cow:
-    'https://images.pexels.com/photos/36183642/pexels-photo-36183642.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  cream:
-    'https://images.pexels.com/photos/15835848/pexels-photo-15835848.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  paneer:
-    'https://images.pexels.com/photos/7368028/pexels-photo-7368028.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  ghee:
-    'https://images.pexels.com/photos/38883078/pexels-photo-38883078.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  curd:
-    'https://images.pexels.com/photos/28664618/pexels-photo-28664618.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  oat:
-    'https://images.pexels.com/photos/6820268/pexels-photo-6820268.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  almond:
-    'https://images.pexels.com/photos/1344035/pexels-photo-1344035.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  coconut:
-    'https://images.pexels.com/photos/8472813/pexels-photo-8472813.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-};
+const popularProducts = [
+  {
+    id: 'A2BuffaloMilk',
+    name: 'A2 Buffalo Milk',
+    price: 63,
+    originalPrice: 69,
+    image: require('@/assets/images/products/A2BufalloMilk-removebg-preview.png'),
+  },
+  {
+    id: 'cowMilk',
+    name: 'Cow Milk',
+    price: 44,
+    originalPrice: 50,
+    image: require('@/assets/images/products/CowMilk-removebg-preview.png'),
+  },
+  {
+    id: 'ghee',
+    name: 'Pure Ghee',
+    price: 470,
+    originalPrice: 495,
+    image: require('@/assets/images/products/buffaloghee-removebg-preview.png'),
+  },
+  {
+    id: 'buffalobutter',
+    name: 'Buffalo Butter',
+    price: 230,
+    originalPrice: 250,
+    image: require('@/assets/images/products/buffalobutter-removebg-preview.png'),
+  },
+  {
+    id: 'cowcurd',
+    name: 'Cow Curd',
+    price: 85,
+    originalPrice: 90,
+    image: require('@/assets/images/products/CowCurd-removebg-preview.png'),
+  },
+  {
+    id: 'cowbutter',
+    name: 'Cow Butter',
+    price: 230,
+    originalPrice: 250,
+    image: require('@/assets/images/products/cowbutter-removebg-preview.png'),
+  },
+];
 
 function getGreeting(date: Date = new Date()) {
   const hour = date.getHours();
@@ -98,10 +120,9 @@ export default function HomeScreen() {
     user,
     walletBalance,
     subscription,
-    products,
   } = useFreshStore();
 
-  const product = products.find(
+  const product = popularProducts.find(
     (p) => p.id === subscription.productId
   );
 
@@ -194,22 +215,18 @@ export default function HomeScreen() {
           paddingBottom: 100,
         }}
       >
-
-        <View className="w-full ">
-
+        <View className="w-full">
           <SafeAreaView edges={['top']}>
             <View className="flex-row items-center justify-between px-5 pb-5">
-
               <Image
                 source={LOGO_URI}
-
-                className="h-11 w-11 "
+                className="h-11 w-11"
                 resizeMode="contain"
               />
 
-              <View className="flex-1 items-center ">
+              <View className="flex-1 items-center">
                 <Text
-                  className="font-sans text-[18px] font-extrabold "
+                  className="font-sans text-[18px] font-extrabold"
                   numberOfLines={1}
                 >
                   {greeting}, {user.name}!
@@ -236,15 +253,12 @@ export default function HomeScreen() {
                   />
                 </Pressable>
               </View>
-
             </View>
           </SafeAreaView>
 
           <View className="px-5 pb-5">
             <View className="rounded-[18px] bg-[#EEF3FF] pt-5">
-
               <View className="mt-3 flex-row items-center justify-between">
-
                 <View className="h-[36px] w-[36px] pl-8 items-center justify-center">
                   <Pressable
                     onPress={() => changeDate(-1)}
@@ -259,7 +273,6 @@ export default function HomeScreen() {
                 </View>
 
                 <View className="flex-1 items-center px-3">
-
                   <Text className="text-[16px] font-bold text-[#111827]">
                     {isToday
                       ? 'Today'
@@ -269,7 +282,6 @@ export default function HomeScreen() {
                   <Text className="mt-[2px] text-[11px] text-[#94A3B8]">
                     Update by 10:00 PM
                   </Text>
-
                 </View>
 
                 <View className="h-[36px] w-[36px] pr-8 items-center justify-center">
@@ -284,7 +296,6 @@ export default function HomeScreen() {
                     />
                   </Pressable>
                 </View>
-
               </View>
 
               <Text className="mt-4 text-center text-[13px] text-[#94A3B8]">
@@ -294,11 +305,8 @@ export default function HomeScreen() {
               </Text>
 
               <View className="mt-4 h-[54px] flex-row overflow-hidden border-t border-[#DCE5FF]">
-
-                <Pressable
-                  className="flex-1 flex-row items-center rounded-bl-full justify-center bg-[#EEF3FF]"
-                >
-                  <View className="h-[45%] w-[13%] items-center justify-center ">
+                <Pressable className="flex-1 flex-row items-center justify-center rounded-bl-full bg-[#EEF3FF]">
+                  <View className="h-[45%] w-[13%] items-center justify-center">
                     <Pause
                       size={15}
                       color="#1E4FFF"
@@ -311,7 +319,7 @@ export default function HomeScreen() {
                   </Text>
                 </Pressable>
 
-                <View className="w-[1px] bg-[#DCE5FF]" />
+                <View className="w-[1.5px] bg-[#DCE5FF]" />
 
                 <Pressable
                   className="flex-1 flex-row items-center justify-center rounded-br-full bg-[#EEF3FF]"
@@ -327,17 +335,12 @@ export default function HomeScreen() {
                     Add Items
                   </Text>
                 </Pressable>
-
               </View>
-
             </View>
-
           </View>
-
         </View>
 
         <View className="mt-1">
-
           <ScrollView
             ref={bannerScroll}
             horizontal
@@ -376,40 +379,9 @@ export default function HomeScreen() {
               />
             ))}
           </View>
-
         </View>
 
         <View className="bg-white px-5 pt-5">
-
-          <SectionTitle
-            title="Fresh Picks"
-            action="See all"
-            onAction={() => router.push('/products')}
-          />
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12 }}
-            className="mt-1"
-          >
-            {products.slice(0, 6).map((p) => (
-              <Pressable
-                key={p.id}
-                onPress={() => router.push(`/product/${p.id}`)}
-              >
-                <Image
-                  source={{
-                    uri:
-                      productImages[p.id] ??
-                      productImages.cow,
-                  }}
-                  className="h-[110px] w-[110px] rounded-[16px]"
-                />
-              </Pressable>
-            ))}
-          </ScrollView>
-
           <SectionTitle
             title="Popular Products"
             action="See all"
@@ -417,8 +389,7 @@ export default function HomeScreen() {
           />
 
           <View className="mt-1 flex-row flex-wrap justify-between">
-
-            {products.slice(0, 6).map((p) => (
+            {popularProducts.map((p) => (
               <Pressable
                 key={p.id}
                 onPress={() => router.push(`/product/${p.id}`)}
@@ -426,12 +397,9 @@ export default function HomeScreen() {
                 className="mb-4 rounded-[16px] border border-[#E2E8F0] bg-white p-[10px]"
               >
                 <Image
-                  source={{
-                    uri:
-                      productImages[p.id] ??
-                      productImages.cow,
-                  }}
-                  className="h-[120px] w-full rounded-[12px]"
+                  source={p.image}
+                  className="h-[150px] w-full"
+                  resizeMode="contain"
                 />
 
                 <Text
@@ -441,17 +409,22 @@ export default function HomeScreen() {
                   {p.name}
                 </Text>
 
-                <Text
-                  className="mt-[2px] text-[12px] text-[#64748B]"
-                  numberOfLines={2}
-                >
-                  {p.description ??
-                    `${p.size} · Fresh daily`}
-                </Text>
+                <View className="mt-1 flex-row items-center">
+                  <Text
+                    className="mr-2 text-[12px] text-[#94A3B8]"
+                    style={{
+                      textDecorationLine: 'line-through',
+                    }}
+                  >
+                    ₹{p.originalPrice}
+                  </Text>
 
+                  <Text className="text-[15px] font-bold text-[#1E4FFF]">
+                    ₹{p.price}
+                  </Text>
+                </View>
               </Pressable>
             ))}
-
           </View>
 
           <Pressable
@@ -467,9 +440,7 @@ export default function HomeScreen() {
               color="#1E4FFF"
             />
           </Pressable>
-
         </View>
-
       </ScrollView>
 
       <Pressable
@@ -481,7 +452,6 @@ export default function HomeScreen() {
           color="#FFFFFF"
         />
       </Pressable>
-
     </View>
   );
 }

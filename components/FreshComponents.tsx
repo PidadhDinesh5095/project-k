@@ -115,25 +115,16 @@ export function StatusPill({
   );
 }
 
-const productImages: Record<string, string> = {
-  buffalo:
-    'https://images.pexels.com/photos/5967316/pexels-photo-5967316.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  cow:
-    'https://images.pexels.com/photos/36183642/pexels-photo-36183642.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  cream:
-    'https://images.pexels.com/photos/15835848/pexels-photo-15835848.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  paneer:
-    'https://images.pexels.com/photos/7368028/pexels-photo-7368028.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  ghee:
-    'https://images.pexels.com/photos/38883078/pexels-photo-38883078.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  curd:
-    'https://images.pexels.com/photos/28664618/pexels-photo-28664618.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  oat:
-    'https://images.pexels.com/photos/6820268/pexels-photo-6820268.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  almond:
-    'https://images.pexels.com/photos/1344035/pexels-photo-1344035.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
-  coconut:
-    'https://images.pexels.com/photos/8472813/pexels-photo-8472813.jpeg?auto=compress&cs=tinysrgb&h=300&w=300',
+const productImages: Record<string, any> = {
+  buffalo: require('@/assets/images/products/A2BufalloMilk-removebg-preview.png'),
+  cow: require('@/assets/images/products/CowMilk-removebg-preview.png'),
+  cream: require('@/assets/images/products/HighProteinMilk-removebg-preview.png'),
+  paneer: require('@/assets/images/products/malaipanner-removebg-preview.png'),
+  ghee: require('@/assets/images/products/buffaloghee-removebg-preview.png'),
+  curd: require('@/assets/images/products/CowCurd-removebg-preview.png'),
+  oat: require('@/assets/images/products/SkimMilk-removebg-preview.png'),
+  almond: require('@/assets/images/products/Curd-removebg-preview.png'),
+  coconut: require('@/assets/images/products/Curd-removebg-preview.png'),
 };
 
 export function ProductCard({
@@ -150,11 +141,12 @@ export function ProductCard({
       onPress={onPress}
       className="mb-3 flex-row gap-3.5 rounded-2xl border border-[#E2E8F0] bg-white p-3"
     >
-      <View className="h-[94px] w-[94px] items-center justify-center overflow-hidden rounded-xl bg-[#E8EDF5]">
+      <View className="h-[94px] w-[94px] items-center justify-center overflow-hidden rounded-xl bg-[#F3F6FB]">
         {productImages[product.id] ? (
           <Image
-            source={{ uri: productImages[product.id] }}
+            source={productImages[product.id]}
             className="h-full w-full"
+            resizeMode="contain"
           />
         ) : (
           <Text className="text-[14px] font-extrabold text-[#94A3B8]">

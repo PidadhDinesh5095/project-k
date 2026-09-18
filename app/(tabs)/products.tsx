@@ -1,13 +1,19 @@
 
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { Search, X } from 'lucide-react-native';
-import { colors, ProductCard, SectionTitle, TrustBadgeRow, WalletChip } from '@/components/FreshComponents';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { colors, ProductCard, TrustBadgeRow, WalletChip } from '@/components/FreshComponents';
 import { useFreshStore } from '@/store/useFreshStore';
 import { Product } from '@/types/fresh';
 
-const dairyCategories = ['All', 'Milk', 'Curd', 'Paneer', 'Ghee'];
+const dairySidebar: Array<{ label: string; key: string; image: number | null }> = [
+  { label: 'All', key: 'All', image: null },
+  { label: 'Milk', key: 'Milk', image: require('@/assets/images/products/CowMilk-removebg-preview.png') },
+  { label: 'Daily Pro+', key: 'Daily Pro+', image: require('@/assets/images/products/A2BufalloMilk-removebg-preview.png') },
+  { label: 'Curd & Paneer', key: 'Curd & Paneer', image: require('@/assets/images/products/CowCurd-removebg-preview.png') },
+  { label: 'Ghee', key: 'Ghee', image: require('@/assets/images/products/buffaloghee-removebg-preview.png') },
+];
+
 const nonDairyCategories = ['All', 'Oat Milk', 'Almond Milk', 'Coconut Milk'];
 
 const nonDairyProducts: Product[] = [
@@ -52,38 +58,29 @@ const nonDairyProducts: Product[] = [
 export default function ProductsScreen() {
   const [type, setType] = useState<'Dairy' | 'Non-Dairy'>('Dairy');
   const [category, setCategory] = useState('All');
-  const [search, setSearch] = useState('');
 
   const { walletBalance, products } = useFreshStore();
 
-  const categoryOptions =
-    type === 'Dairy' ? dairyCategories : nonDairyCategories;
+  const categoryOptions: Array<string | { label: string; key: string; image: number | null }> =
+    type === 'Dairy' ? dairySidebar : nonDairyCategories;
 
   const visibleProducts = useMemo(() => {
     const source = type === 'Dairy' ? products : nonDairyProducts;
 
-    let result =
-      category === 'All'
-        ? source
-        : source.filter((product) => product.category === category);
-
-    if (search.trim()) {
-      const query = search.trim().toLowerCase();
-
-      result = result.filter(
-        (product) =>
-          product.name.toLowerCase().includes(query) ||
-          product.tags.some((tag) => tag.toLowerCase().includes(query))
-      );
+    if (type === 'Dairy') {
+      if (category === 'All') return source;
+      if (category === 'Daily Pro+') return source.filter((product) => product.category === 'Milk');
+      if (category === 'Curd & Paneer') return source.filter((product) => ['Curd', 'Paneer'].includes(product.category));
+      return source.filter((product) => product.category === category);
     }
 
-    return result;
-  }, [category, type, search, products]);
+    if (category === 'All') return source;
+    return source.filter((product) => product.category === category);
+  }, [category, type, products]);
 
   const chooseType = (next: 'Dairy' | 'Non-Dairy') => {
     setType(next);
     setCategory('All');
-    setSearch('');
   };
 
   return (
@@ -101,136 +98,112 @@ export default function ProductsScreen() {
         />
       </View>
 
-      {/* Dairy / Non-Dairy */}
-      <View className="mx-5 mt-4 flex-row border-b border-[#E2E8F0]">
-        {(['Dairy', 'Non-Dairy'] as const).map((item) => {
-          const active = type === item;
-
-          return (
-            <Pressable
-              key={item}
-              onPress={() => chooseType(item)}
-              className={`mr-[22px] border-b-2 px-[6px] pb-[10px] ${
-                active
-                  ? 'border-[#1E4FFF]'
-                  : 'border-transparent'
-              }`}
-            >
-              <Text
-                className={`text-[14px] font-bold ${
-                  active ? 'text-[#1E4FFF]' : 'text-[#64748B]'
-                }`}
-              >
-                {item}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Search */}
-      <View className="mt-[14px] px-5">
-        <View className="h-12 flex-row items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-[14px]">
-          <Search size={16} color={colors.muted} />
-
-          <TextInput
-            className="flex-1 p-0 text-[14px] text-[#111827]"
-            placeholder="Search for milk, ghee, paneer…"
-            placeholderTextColor={colors.muted}
-            value={search}
-            onChangeText={setSearch}
-          />
-
-          {search.length > 0 && (
-            <Pressable
-              onPress={() => setSearch('')}
-              hitSlop={8}
-            >
-              <X size={16} color={colors.muted} />
-            </Pressable>
-          )}
-        </View>
-      </View>
-
-      {/* Categories */}
-      <View className="mt-[14px] mb-1">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            gap: 8,
-          }}
-        >
-          {categoryOptions.map((item) => {
-            const active = category === item;
+      <View className="mt-4 px-5">
+        <View className="flex-row items-center justify-between gap-4 border-b border-[#E2E8F0] pb-3">
+          {(['Dairy', 'Non-Dairy'] as const).map((item) => {
+            const active = type === item;
 
             return (
               <Pressable
                 key={item}
-                onPress={() => setCategory(item)}
-                className={`h-9 justify-center rounded-[16px] border px-4 ${
-                  active
-                    ? 'border-[#1E4FFF] bg-[#1E4FFF]'
-                    : 'border-[#E2E8F0] bg-white'
+                onPress={() => chooseType(item)}
+                className={`flex-1 items-center justify-center border-b-2 pb-2 ${
+                  active ? 'border-[#1E4FFF]' : 'border-transparent'
                 }`}
               >
+                <View className="flex-row items-center gap-2">
+                  <Image
+                    source={
+                      item === 'Dairy'
+                        ? require('@/assets/images/products/CowMilk-removebg-preview.png')
+                        : require('@/assets/images/products/CowCurd-removebg-preview.png')
+                    }
+                    className="h-8 w-8"
+                    resizeMode="contain"
+                  />
+                  <Text
+                    className={`text-[14px] font-bold ${
+                      active ? 'text-[#1E4FFF]' : 'text-[#64748B]'
+                    }`}
+                  >
+                    {item}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View className="mt-4 flex-row gap-3">
+          {categoryOptions.map((item) => {
+            const isSidebarItem = type === 'Dairy' && typeof item !== 'string';
+            const label = isSidebarItem ? item.label : String(item);
+            const currentKey = isSidebarItem ? item.key : String(item);
+            const active = category === currentKey;
+            const icon = isSidebarItem ? item.image : null;
+
+            return (
+              <Pressable
+                key={currentKey}
+                onPress={() => setCategory(currentKey)}
+                className={`flex-1 items-center justify-center rounded-[18px] px-2 py-3 ${
+                  active ? 'bg-[#F4F7FF]' : 'bg-transparent'
+                }`}
+                style={{ minWidth: 0 }}
+              >
+                {icon ? (
+                  <Image
+                    source={icon}
+                    className="h-10 w-10"
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-[#EEF3FF]">
+                    <Text className="text-[10px] font-bold text-[#1E4FFF]">All</Text>
+                  </View>
+                )}
+
                 <Text
-                  className={`text-[13px] leading-4 font-semibold ${
-                    active ? 'text-white' : 'text-[#111827]'
+                  className={`mt-2 text-center text-[12px] font-semibold ${
+                    active ? 'text-[#111827]' : 'text-[#475569]'
                   }`}
                 >
-                  {item}
+                  {label}
                 </Text>
               </Pressable>
             );
           })}
-        </ScrollView>
+        </View>
       </View>
 
-      {/* Product List */}
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: 100,
-        }}
-      >
-        <SectionTitle title={`${type} Products`} />
+      <View className="mt-4 flex-row px-5">
 
-        <Text className="mt-[-4px] mb-3 text-[12px] text-[#64748B]">
-          Showing {visibleProducts.length} product
-          {visibleProducts.length !== 1 ? 's' : ''}
-          {search.trim() ? ` for "${search.trim()}"` : ''}
-        </Text>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            paddingBottom: 100,
+          }}
+        >
+          {visibleProducts.length === 0 ? (
+            <View className="items-center py-[60px]">
+              <Text className="text-[16px] font-bold text-[#111827]">
+                No products found
+              </Text>
+            </View>
+          ) : (
+            visibleProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onPress={() => router.push(`/product/${product.id}`)}
+                onAdd={() => router.push(`/product/${product.id}`)}
+              />
+            ))
+          )}
 
-        {visibleProducts.length === 0 ? (
-          <View className="items-center py-[60px]">
-            <Text className="text-[16px] font-bold text-[#111827]">
-              No products found
-            </Text>
-
-            <Text className="mt-[6px] text-[13px] text-[#64748B]">
-              Try a different search or category
-            </Text>
-          </View>
-        ) : (
-          visibleProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onPress={() =>
-                router.push(`/product/${product.id}`)
-              }
-              onAdd={() =>
-                router.push(`/product/${product.id}`)
-              }
-            />
-          ))
-        )}
-
-        <TrustBadgeRow />
-      </ScrollView>
+          <TrustBadgeRow />
+        </ScrollView>
+      </View>
     </View>
   );
 }
