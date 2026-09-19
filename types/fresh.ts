@@ -1,6 +1,6 @@
 export interface Address { id: string; label: string; line1: string; city: string; pincode: string; isDefault: boolean; deliveryInstructions?: string; recipientName?: string; recipientPhone?: string }
 export interface User { id: string; name: string; firstName?: string; lastName?: string; email?: string; birthDate?: string; phone: string; addresses: Address[]; walletBalance: number; paymentMethods: string[] }
-export interface Product { id: string; name: string; size: string; category: string; price: number; mrp: number; tags: string[]; description: string; nextDeliveryDate: string; imageLabel: string }
+export interface Product { id: string; name: string; size: string; category: string; price: number; mrp: number; tags: string[]; description: string; nextDeliveryDate: string; imageLabel: string; imageFile?: string }
 export interface CartItem { productId: string; quantity: number; oneTimeOrSubscription: 'one-time' | 'subscription' }
 export type SubscriptionStatus = 'Active' | 'Paused' | 'Cancelled'
 export interface Subscription { id: string; productId: string; planTier: 'Starter' | 'Family' | 'Bulk'; quantityPerDelivery: number; frequency: 'Daily' | 'Alternate Days' | 'Weekly' | 'Custom'; timeSlot: 'Morning' | 'Evening' | 'Morning + Evening'; startDate: string; durationType: 'Ongoing' | 'EndDate'; status: SubscriptionStatus; deliveryAddressId: string; paymentMethod: string; skippedDates: string[]; pausedRange?: { from: string; to: string }; nextDeliveryDate: string; createdDate: string }

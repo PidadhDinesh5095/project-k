@@ -221,8 +221,10 @@ export default function TabLayout() {
         },
 
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
+          lineHeight: 12,
+          textAlign: 'center',
         },
       }}
     >
@@ -237,10 +239,13 @@ export default function TabLayout() {
 
           tabBarLabel: () => (
             <Text
+              numberOfLines={1}
               style={{
                 color: BLUE,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: '600',
+                lineHeight: 12,
+                textAlign: 'center',
               }}
             >
               Home
@@ -267,10 +272,13 @@ export default function TabLayout() {
 
           tabBarLabel: () => (
             <Text
+              numberOfLines={1}
               style={{
                 color: BLUE,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: '600',
+                lineHeight: 12,
+                textAlign: 'center',
               }}
             >
               Products
@@ -297,10 +305,13 @@ export default function TabLayout() {
 
           tabBarLabel: () => (
             <Text
+              numberOfLines={1}
               style={{
                 color: BLUE,
                 fontSize: 10,
                 fontWeight: '700',
+                lineHeight: 12,
+                textAlign: 'center',
               }}
             >
               ₹{Number(walletBalance ?? 0).toFixed(2)}
@@ -332,10 +343,13 @@ export default function TabLayout() {
 
           tabBarLabel: () => (
             <Text
+              numberOfLines={1}
               style={{
                 color: BLUE,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: '600',
+                lineHeight: 12,
+                textAlign: 'center',
               }}
             >
               My Orders
@@ -367,10 +381,13 @@ export default function TabLayout() {
 
           tabBarLabel: () => (
             <Text
+              numberOfLines={1}
               style={{
                 color: BLUE,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: '600',
+                lineHeight: 12,
+                textAlign: 'center',
               }}
             >
               Account

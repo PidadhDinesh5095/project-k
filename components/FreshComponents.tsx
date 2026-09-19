@@ -63,9 +63,8 @@ export function PrimaryButton({
     <Pressable
       disabled={disabled}
       onPress={onPress}
-      className={`min-h-[50px] flex-row items-center justify-center gap-2 rounded-[25px] bg-[#1E4FFF] ${
-        disabled ? 'opacity-[0.45]' : ''
-      }`}
+      className={`min-h-[50px] flex-row items-center justify-center gap-2 rounded-[25px] bg-[#1E4FFF] ${disabled ? 'opacity-[0.45]' : ''
+        }`}
     >
       <Text className="text-[15px] font-bold text-white">
         {label}
@@ -92,22 +91,20 @@ export function StatusPill({
 
   return (
     <View
-      className={`self-start rounded-xl px-[9px] py-1 ${
-        tone === 'green'
-          ? 'bg-[#DCFCE7]'
-          : tone === 'red'
-            ? 'bg-[#FEE2E2]'
-            : 'bg-[#E0EAFF]'
-      }`}
+      className={`self-start rounded-xl px-[9px] py-1 ${tone === 'green'
+        ? 'bg-[#DCFCE7]'
+        : tone === 'red'
+          ? 'bg-[#FEE2E2]'
+          : 'bg-[#E0EAFF]'
+        }`}
     >
       <Text
-        className={`text-[11px] font-bold ${
-          tone === 'green'
-            ? 'text-[#15803D]'
-            : tone === 'red'
-              ? 'text-[#B91C1C]'
-              : 'text-[#1E4FFF]'
-        }`}
+        className={`text-[11px] font-bold ${tone === 'green'
+          ? 'text-[#15803D]'
+          : tone === 'red'
+            ? 'text-[#B91C1C]'
+            : 'text-[#1E4FFF]'
+          }`}
       >
         {label}
       </Text>
@@ -116,16 +113,20 @@ export function StatusPill({
 }
 
 const productImages: Record<string, any> = {
-  buffalo: require('@/assets/images/products/A2BufalloMilk-removebg-preview.png'),
-  cow: require('@/assets/images/products/CowMilk-removebg-preview.png'),
-  cream: require('@/assets/images/products/HighProteinMilk-removebg-preview.png'),
-  paneer: require('@/assets/images/products/malaipanner-removebg-preview.png'),
-  ghee: require('@/assets/images/products/buffaloghee-removebg-preview.png'),
-  curd: require('@/assets/images/products/CowCurd-removebg-preview.png'),
-  oat: require('@/assets/images/products/SkimMilk-removebg-preview.png'),
-  almond: require('@/assets/images/products/Curd-removebg-preview.png'),
-  coconut: require('@/assets/images/products/Curd-removebg-preview.png'),
+  'A2BufalloMilk-removebg-preview.png': require('@/assets/images/products/A2BufalloMilk-removebg-preview.png'),
+  'CowMilk-removebg-preview.png': require('@/assets/images/products/CowMilk-removebg-preview.png'),
+  'TonedMilk-removebg-preview.png': require('@/assets/images/products/TonedMilk-removebg-preview.png'),
+  'SkimMilk-removebg-preview.png': require('@/assets/images/products/SkimMilk-removebg-preview.png'),
+  'HighProteinMilk-removebg-preview.png': require('@/assets/images/products/HighProteinMilk-removebg-preview.png'),
+  'malaipanner-removebg-preview.png': require('@/assets/images/products/malaipanner-removebg-preview.png'),
+  'Curd-removebg-preview.png': require('@/assets/images/products/Curd-removebg-preview.png'),
+  'CowCurd-removebg-preview.png': require('@/assets/images/products/CowCurd-removebg-preview.png'),
+  'buffaloghee-removebg-preview.png': require('@/assets/images/products/buffaloghee-removebg-preview.png'),
+  'cowghee-removebg-preview.png': require('@/assets/images/products/cowghee-removebg-preview.png'),
+  'buffalobutter-removebg-preview.png': require('@/assets/images/products/buffalobutter-removebg-preview.png'),
+  'cowbutter-removebg-preview.png': require('@/assets/images/products/cowbutter-removebg-preview.png'),
 };
+
 
 export function ProductCard({
   product,
@@ -136,76 +137,95 @@ export function ProductCard({
   onPress: () => void;
   onAdd: () => void;
 }) {
+  const imageSource = product.imageFile
+    ? productImages[product.imageFile]
+    : productImages[product.id];
+
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 flex-row gap-3.5 rounded-2xl border border-[#E2E8F0] bg-white p-3"
+      className="mb-3 rounded-2xl bg-neutral-100 p-2"
     >
-      <View className="h-[94px] w-[94px] items-center justify-center overflow-hidden rounded-xl bg-[#F3F6FB]">
-        {productImages[product.id] ? (
-          <Image
-            source={productImages[product.id]}
-            className="h-full w-full"
-            resizeMode="contain"
-          />
-        ) : (
-          <Text className="text-[14px] font-extrabold text-[#94A3B8]">
-            {product.imageLabel}
-          </Text>
-        )}
-      </View>
-
-      <View className="flex-1">
-        <Text className="text-[15px] font-bold text-[#0F172A]">
-          {product.name}
-        </Text>
-
-        <Text className="mt-1 text-[12px] text-[#64748B]">
-          {product.size} · Fresh daily
-        </Text>
-
-        <View className="mt-2 flex-row gap-[5px]">
-          {product.tags.slice(0, 2).map((tag) => (
-            <View
-              key={tag}
-              className="rounded-[10px] bg-[#EEF3FF] px-1.5 py-[3px]"
-            >
-              <Text className="text-[9px] font-semibold text-[#1E4FFF]">
-                {tag}
-              </Text>
-            </View>
-          ))}
+      <View className="flex-row">
+        <View className="h-[125px] w-[125px] items-center m-1 justify-center overflow-hidden rounded-xl">
+          {imageSource ? (
+            <Image
+              source={imageSource}
+              className="h-full w-full"
+              resizeMode="contain"
+            />
+          ) : (
+            <Text className="text-[13px] font-extrabold text-[#94A3B8]">
+              {product.imageLabel}
+            </Text>
+          )}
         </View>
 
-        <View className="mt-[9px] flex-row items-center justify-between">
-          <View>
-            <Text className="text-[15px] font-extrabold text-[#0F172A]">
+        <View className="ml-6 mt-2 flex-1">
+          <Text
+            numberOfLines={1}
+            className="text-[1.25rem] font-bold text-[#0F172A]"
+          >
+            {product.name}
+          </Text>
+
+          <Text
+            numberOfLines={1}
+            className="mt-1 text-[0.88rem] text-[#64748B]"
+          >
+            {product.size} · Fresh daily
+          </Text>
+
+          <View className="mt-2 flex-row gap-[5px]">
+            {product.tags.slice(0, 2).map((tag) => (
+              <View
+                key={tag}
+                className="rounded-[10px] bg-[#EEF3FF] px-1 py-[3px]"
+              >
+                <Text className="text-[0.85rem] font-semibold text-[#1E4FFF]">
+                  {tag}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <View className="mt-2 flex-row items-center">
+            <Text className="text-[1.25rem] font-extrabold text-[#0F172A]">
               ₹{product.price}
             </Text>
 
-            <Text className="absolute left-[34px] top-[3px] text-[11px] text-[#64748B] line-through">
+            <Text className="ml-2 text-[0.88rem] text-[#64748B] line-through">
               ₹{product.mrp}
             </Text>
           </View>
-
-          <Pressable
-            onPress={onAdd}
-            className="flex-row items-center gap-[3px] rounded-[17px] border border-[#1E4FFF] px-3 py-[7px]"
-          >
-            <Plus
-              size={14}
-              color={colors.primary}
-            />
-
-            <Text className="text-[12px] font-bold text-[#1E4FFF]">
-              Add
-            </Text>
-          </Pressable>
         </View>
+      </View>
+
+      <View className="mt-2 flex-row gap-2">
+        <Pressable
+          onPress={onPress}
+          className="flex-1 h-12 items-center justify-center rounded-full border border-[#1E4FFF] py-[8px]"
+        >
+          <Text className="text-[14px] font-bold text-[#1E4FFF]">
+            Subscribe
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={onAdd}
+          className="flex-1 h-12 flex-row items-center justify-center gap-[4px] rounded-full bg-[#1E4FFF] py-[8px]"
+        >
+          <Plus size={14} color="#FFFFFF" />
+
+          <Text className="text-[14px] font-bold text-white">
+            Add
+          </Text>
+        </Pressable>
       </View>
     </Pressable>
   );
 }
+
 
 export function TrustBadgeRow() {
   return (

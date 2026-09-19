@@ -1,31 +1,30 @@
 
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Dimensions, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { ArrowLeft, Check, Clock } from 'lucide-react-native';
 import { PrimaryButton, TrustBadgeRow } from '@/components/FreshComponents';
 import { useFreshStore } from '@/store/useFreshStore';
 import { formatDate } from '@/lib/cutoff';
 
-const productImages: Record<string, string> = {
-  buffalo:
-    'https://images.pexels.com/photos/5967316/pexels-photo-5967316.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
-  cow:
-    'https://images.pexels.com/photos/36183642/pexels-photo-36183642.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
-  cream:
-    'https://images.pexels.com/photos/15835848/pexels-photo-15835848.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
-  paneer:
-    'https://images.pexels.com/photos/7368028/pexels-photo-7368028.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
-  ghee:
-    'https://images.pexels.com/photos/38883078/pexels-photo-38883078.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
-  curd:
-    'https://images.pexels.com/photos/28664618/pexels-photo-28664618.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
-  oat:
-    'https://images.pexels.com/photos/6820268/pexels-photo-6820268.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
-  almond:
-    'https://images.pexels.com/photos/1344035/pexels-photo-1344035.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
-  coconut:
-    'https://images.pexels.com/photos/8472813/pexels-photo-8472813.jpeg?auto=compress&cs=tinysrgb&h=400&w=400',
+const { width: SCREEN_W } = Dimensions.get('window');
+
+const productImages: Record<string, any> = {
+  buffalo: require('@/assets/images/products/A2BufalloMilk.png'),
+  cow: require('@/assets/images/products/CowMilk.png'),
+  cream: require('@/assets/images/products/HighProteinMilk.png'),
+  'toned-milk': require('@/assets/images/products/TonedMilk.png'),
+  'skim-milk': require('@/assets/images/products/SkimMilk.png'),
+  paneer: require('@/assets/images/products/malaipanner.png'),
+  curd: require('@/assets/images/products/Curd.png'),
+  'cow-curd': require('@/assets/images/products/CowCurd.png'),
+  ghee: require('@/assets/images/products/buffaloghee.png'),
+  'cow-ghee': require('@/assets/images/products/cowghee.png'),
+  'buffalo-butter': require('@/assets/images/products/buffalobutter.png'),
+  'cow-butter': require('@/assets/images/products/cowbutter.png'),
+  oat: require('@/assets/images/products/SkimMilk.png'),
+  almond: require('@/assets/images/products/Curd.png'),
+  coconut: require('@/assets/images/products/Curd.png'),
 };
 
 function generateDeliveryDates(): {
@@ -74,10 +73,9 @@ export default function ProductDetailScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Product Image */}
         <Image
-          source={{
-            uri: productImages[product.id] ?? productImages.cow,
-          }}
-          className="h-[280px] w-full"
+          source={productImages[product.id] ?? productImages.cow}
+          style={{ width: SCREEN_W, height: SCREEN_W, alignSelf: 'center' }}
+          resizeMode="contain"
         />
 
         {/* Back Button */}

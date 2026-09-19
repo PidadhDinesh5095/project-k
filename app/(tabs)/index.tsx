@@ -43,46 +43,46 @@ const bannerImages = [
 
 const popularProducts = [
   {
-    id: 'A2BuffaloMilk',
+    id: 'buffalo',
     name: 'A2 Buffalo Milk',
-    price: 63,
-    originalPrice: 69,
+    price: 72,
+    originalPrice: 80,
     image: require('@/assets/images/products/A2BufalloMilk-removebg-preview.png'),
   },
   {
-    id: 'cowMilk',
+    id: 'cow',
     name: 'Cow Milk',
-    price: 44,
-    originalPrice: 50,
+    price: 58,
+    originalPrice: 64,
     image: require('@/assets/images/products/CowMilk-removebg-preview.png'),
   },
   {
-    id: 'ghee',
-    name: 'Pure Ghee',
-    price: 470,
-    originalPrice: 495,
-    image: require('@/assets/images/products/buffaloghee-removebg-preview.png'),
-  },
-  {
-    id: 'buffalobutter',
-    name: 'Buffalo Butter',
-    price: 230,
-    originalPrice: 250,
-    image: require('@/assets/images/products/buffalobutter-removebg-preview.png'),
-  },
-  {
-    id: 'cowcurd',
-    name: 'Cow Curd',
-    price: 85,
+    id: 'cream',
+    name: 'High Protein Milk',
+    price: 82,
     originalPrice: 90,
-    image: require('@/assets/images/products/CowCurd-removebg-preview.png'),
+    image: require('@/assets/images/products/HighProteinMilk-removebg-preview.png'),
   },
   {
-    id: 'cowbutter',
-    name: 'Cow Butter',
-    price: 230,
-    originalPrice: 250,
-    image: require('@/assets/images/products/cowbutter-removebg-preview.png'),
+    id: 'toned-milk',
+    name: 'Toned Milk',
+    price: 60,
+    originalPrice: 66,
+    image: require('@/assets/images/products/TonedMilk-removebg-preview.png'),
+  },
+  {
+    id: 'curd',
+    name: 'Curd',
+    price: 48,
+    originalPrice: 55,
+    image: require('@/assets/images/products/Curd-removebg-preview.png'),
+  },
+  {
+    id: 'ghee',
+    name: 'Buffalo Ghee',
+    price: 690,
+    originalPrice: 760,
+    image: require('@/assets/images/products/buffaloghee-removebg-preview.png'),
   },
 ];
 
@@ -216,8 +216,8 @@ export default function HomeScreen() {
         }}
       >
         <View className="w-full">
-          <SafeAreaView edges={['top']}>
-            <View className="flex-row items-center justify-between px-5 pb-5">
+          <SafeAreaView edges={['top']} style={{ paddingTop: 0 }}>
+            <View className="flex-row items-center justify-between px-5 pb-3">
               <Image
                 source={LOGO_URI}
                 className="h-11 w-11"
@@ -394,24 +394,24 @@ export default function HomeScreen() {
                 key={p.id}
                 onPress={() => router.push(`/product/${p.id}`)}
                 style={{ width: '48%' }}
-                className="mb-4 rounded-[16px] border border-[#E2E8F0] bg-white p-[10px]"
+                className="mb-4 rounded-[16px]  bg-neutral-100 p-[10px]"
               >
                 <Image
                   source={p.image}
-                  className="h-[150px] w-full"
+                  className="h-[140px] w-full"
                   resizeMode="contain"
                 />
 
                 <Text
-                  className="mt-2 text-[14px] font-bold text-[#111827]"
+                  className="mt-2 ml-2 text-[15px] font-bold text-[#111827]"
                   numberOfLines={1}
                 >
                   {p.name}
                 </Text>
 
-                <View className="mt-1 flex-row items-center">
+                <View className="mt-1 ml-2 flex-row items-center">
                   <Text
-                    className="mr-2 text-[12px] text-[#94A3B8]"
+                    className="mr-2 text-[14px] text-[#94A3B8]"
                     style={{
                       textDecorationLine: 'line-through',
                     }}
@@ -419,7 +419,7 @@ export default function HomeScreen() {
                     ₹{p.originalPrice}
                   </Text>
 
-                  <Text className="text-[15px] font-bold text-[#1E4FFF]">
+                  <Text className="text-[17px] font-bold text-[#1E4FFF]">
                     ₹{p.price}
                   </Text>
                 </View>

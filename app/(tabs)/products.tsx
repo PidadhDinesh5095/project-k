@@ -7,11 +7,12 @@ import { useFreshStore } from '@/store/useFreshStore';
 import { Product } from '@/types/fresh';
 
 const dairySidebar: Array<{ label: string; key: string; image: number | null }> = [
-  { label: 'All', key: 'All', image: null },
+  { label: 'All', key: 'All', image: require('@/assets/images/products/all.png') },
   { label: 'Milk', key: 'Milk', image: require('@/assets/images/products/CowMilk-removebg-preview.png') },
-  { label: 'Daily Pro+', key: 'Daily Pro+', image: require('@/assets/images/products/A2BufalloMilk-removebg-preview.png') },
-  { label: 'Curd & Paneer', key: 'Curd & Paneer', image: require('@/assets/images/products/CowCurd-removebg-preview.png') },
+  { label: 'Curd', key: 'Curd', image: require('@/assets/images/products/CowCurd-removebg-preview.png') },
+  { label: 'Paneer', key: 'Paneer', image: require('@/assets/images/products/malaipanner-removebg-preview.png') },
   { label: 'Ghee', key: 'Ghee', image: require('@/assets/images/products/buffaloghee-removebg-preview.png') },
+  { label: 'Butter', key: 'Butter', image: require('@/assets/images/products/buffalobutter-removebg-preview.png') },
 ];
 
 const nonDairyCategories = ['All', 'Oat Milk', 'Almond Milk', 'Coconut Milk'];
@@ -69,8 +70,6 @@ export default function ProductsScreen() {
 
     if (type === 'Dairy') {
       if (category === 'All') return source;
-      if (category === 'Daily Pro+') return source.filter((product) => product.category === 'Milk');
-      if (category === 'Curd & Paneer') return source.filter((product) => ['Curd', 'Paneer'].includes(product.category));
       return source.filter((product) => product.category === category);
     }
 
@@ -134,7 +133,7 @@ export default function ProductsScreen() {
           })}
         </View>
 
-        <View className="mt-4 flex-row gap-3">
+        <View className="mt-1 flex-row gap-2">
           {categoryOptions.map((item) => {
             const isSidebarItem = type === 'Dairy' && typeof item !== 'string';
             const label = isSidebarItem ? item.label : String(item);
@@ -146,7 +145,7 @@ export default function ProductsScreen() {
               <Pressable
                 key={currentKey}
                 onPress={() => setCategory(currentKey)}
-                className={`flex-1 items-center justify-center rounded-[18px] px-2 py-3 ${
+                className={`flex-1 items-center justify-center rounded-[18px]  ${
                   active ? 'bg-[#F4F7FF]' : 'bg-transparent'
                 }`}
                 style={{ minWidth: 0 }}
