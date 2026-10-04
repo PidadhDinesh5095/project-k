@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { transactions as seededTransactions, user as seededUser } from '@/lib/mockData';
+import { transactions as seededTransactions } from '@/lib/mockData';
 import { WalletTransaction } from '@/types/fresh';
 
 type WalletState = { balance: number; transactions: WalletTransaction[] };
 
-const initialState: WalletState = { balance: seededUser.walletBalance, transactions: seededTransactions };
+const initialState: WalletState = { balance: 0, transactions: seededTransactions };
 
 const walletSlice = createSlice({
   name: 'wallet',

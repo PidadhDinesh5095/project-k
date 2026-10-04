@@ -14,7 +14,8 @@ import { useFreshStore } from '@/store/useFreshStore';
 import { formatDate } from '@/lib/cutoff';
 
 export default function CheckoutScreen() {
-  const { user, walletBalance, products } = useFreshStore();
+  const { addresses, walletBalance, products } = useFreshStore();
+  const deliveryAddress = addresses.find((address) => address.isDefault) ?? addresses[0];
   const item = products[0];
   const qty = 1;
   const itemTotal = item.price * qty;
@@ -58,17 +59,17 @@ export default function CheckoutScreen() {
 
             <View className="flex-1">
               <Text className="text-[14px] font-bold text-[#111827]">
-                {user.addresses[0].label}
+                {deliveryAddress?.label ?? 'No delivery address saved'}
               </Text>
 
               <Text className="mt-0.5 text-[12px] text-[#64748B]">
-                {user.addresses[0].line1}, {user.addresses[0].city}
+                {[deliveryAddress?.line1, deliveryAddress?.city, deliveryAddress?.pincode].filter(Boolean).join(', ')}
               </Text>
 
-              {user.addresses[0].recipientName ? (
+              {deliveryAddress?.recipientName ? (
                 <Text className="mt-2.5 text-[12px] font-bold text-[#023E8A]">
-                  For: {user.addresses[0].recipientName} ·{' '}
-                  {user.addresses[0].recipientPhone}
+                  For: {deliveryAddress.recipientName} ·{' '}
+                  {deliveryAddress.recipientPhone}
                 </Text>
               ) : null}
             </View>
@@ -80,9 +81,9 @@ export default function CheckoutScreen() {
             </Pressable>
           </View>
 
-          {user.addresses[0].deliveryInstructions ? (
+          {deliveryAddress?.deliveryInstructions ? (
             <Text className="mt-2.5 text-[12px] font-bold text-[#023E8A]">
-              Instructions: {user.addresses[0].deliveryInstructions}
+              Instructions: {deliveryAddress.deliveryInstructions}
             </Text>
           ) : null}
         </View>

@@ -60,7 +60,8 @@ const allSubscriptions = [
 ];
 
 export default function AccountScreen() {
-  const { user, walletBalance, products } = useFreshStore();
+  const { user, profile, walletBalance, products } = useFreshStore();
+  const profileName = [profile.details.firstName, profile.details.lastName].filter(Boolean).join(' ') || user.name;
 
   return (
     <View className="flex-1 bg-[#F7F9FC]">
@@ -85,14 +86,14 @@ export default function AccountScreen() {
           {/* Avatar */}
           <View className="h-12 w-12 items-center justify-center rounded-full bg-[#4a5373]">
             <Text className="text-[20px] font-bold  text-white">
-              {user.name[0]}
+              {profileName[0]}
             </Text>
           </View>
 
           {/* User Details */}
           <View className="flex-1">
             <Text className="text-[16px] font-bold text-[#7389b6]">
-              {user.name}
+              {profileName}
             </Text>
 
             <Text className="mt-[2px] text-[13px] text-[#64748B]">

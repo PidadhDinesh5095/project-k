@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { ArrowLeft, Calendar, CheckCircle2, Phone } from 'lucide-react-native';
 import { colors, PrimaryButton } from '@/components/FreshComponents';
+import { useAppDispatch } from '@/store/hooks';
+import { completeProfile, fetchProfile, updateProfile } from '@/store/slices/profileSlice';
 import { useFreshStore } from '@/store/useFreshStore';
 
 function isValidBirthDate(value: string) {
@@ -36,12 +38,25 @@ function isAtLeast15(value: string) {
 }
 
 export default function CompleteProfileScreen() {
-  const { user, updateProfile } = useFreshStore();
-  const [firstName, setFirstName] = useState(user.firstName ?? '');
-  const [lastName, setLastName] = useState(user.lastName ?? '');
-  const [email, setEmail] = useState(user.email ?? '');
-  const [birthDate, setBirthDate] = useState(user.birthDate ?? '');
+  const { user, profile } = useFreshStore();
+  const dispatch = useAppDispatch();
+  const [firstName, setFirstName] = useState(profile.details.firstName);
+  const [lastName, setLastName] = useState(profile.details.lastName);
+  const [email, setEmail] = useState(profile.details.email);
+  const [birthDate, setBirthDate] = useState(profile.details.birthDate);
   const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    if (!profile.hasLoaded) dispatch(fetchProfile());
+  }, [dispatch, profile.hasLoaded]);
+
+  useEffect(() => {
+    if (!profile.hasLoaded) return;
+    setFirstName(profile.details.firstName);
+    setLastName(profile.details.lastName);
+    setEmail(profile.details.email);
+    setBirthDate(profile.details.birthDate);
+  }, [profile.details, profile.hasLoaded]);
 
   const emailIsValid = !email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const birthDateIsValid = !birthDate.trim() || (isValidBirthDate(birthDate) && isAtLeast15(birthDate));
@@ -60,19 +75,29 @@ export default function CompleteProfileScreen() {
     setBirthDate(formatted);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formIsValid) {
       setTouched(true);
       return;
     }
 
-    updateProfile({
+    const details = {
       firstName: firstName.trim(),
-      lastName: lastName.trim() || undefined,
-      email: email.trim() || undefined,
+      lastName: lastName.trim(),
+      email: email.trim(),
       birthDate,
-    });
-    router.replace('/(tabs)');
+    };
+
+    try {
+      if (profile.profileCompleted) {
+        await dispatch(updateProfile(details)).unwrap();
+      } else {
+        await dispatch(completeProfile(details)).unwrap();
+      }
+      router.replace('/(tabs)');
+    } catch {
+      // The rejected thunk stores the API error in Redux for display.
+    }
   };
 
   return (
@@ -83,7 +108,7 @@ export default function CompleteProfileScreen() {
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         <Text className="mt-2 text-[22px] font-raleway-semibold text-[#111827]">Complete your profile</Text>
-        
+        {!!profile.error && <Text className="mt-3 text-[13px] text-red-600">{profile.error}</Text>}
 
         <Text className="mb-2 mt-6 text-[15px] font-raleway-semibold text-[#111827]">
           First name <Text className="text-red-500">*</Text>
@@ -138,18 +163,18 @@ export default function CompleteProfileScreen() {
         <View className="mt-7">
           <Pressable
             onPress={handleSubmit}
-            disabled={!formIsValid}
+            disabled={!formIsValid || profile.isSaving || profile.isLoading}
             className={`rounded-full items-center justify-center  h-16 px-4 py-3 ${
-              formIsValid ? 'bg-[#023E8A]' : 'bg-[#E2E8F0]'
+              formIsValid && !profile.isSaving && !profile.isLoading ? 'bg-[#023E8A]' : 'bg-[#E2E8F0]'
             }`}
           >
-            <Text
-              className={`text-center text-[20px] font-raleway-semibold ${
-                formIsValid ? 'text-white' : 'text-[#94A3B8]'
-              }`}
-            >
-              Complete Profile
-            </Text>
+            {profile.isSaving || profile.isLoading ? (
+              <ActivityIndicator color={profile.isSaving ? '#FFFFFF' : colors.primary} />
+            ) : (
+              <Text className={`text-center text-[20px] font-raleway-semibold ${formIsValid ? 'text-white' : 'text-[#94A3B8]'}`}>
+                {profile.profileCompleted ? 'Save Profile' : 'Complete Profile'}
+              </Text>
+            )}
           </Pressable>
         </View>
       </ScrollView>

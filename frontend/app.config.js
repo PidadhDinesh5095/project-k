@@ -27,6 +27,12 @@ export default {
       'expo-splash-screen',
       'expo-status-bar',
       'expo-secure-store',
+      [
+        'expo-location',
+        {
+          locationWhenInUsePermission: 'Allow Dinesh Farms to use your location to set your delivery address.',
+        },
+      ],
       './plugins/withGoogleMaps',
     ],
 

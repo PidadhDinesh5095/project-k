@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
@@ -21,7 +22,9 @@ import {
   PawPrint,
   ShieldCheck,
 } from 'lucide-react-native';
-import { colors, PrimaryButton } from '@/components/FreshComponents';
+import { colors } from '@/components/FreshComponents';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { DeliveryInstruction, saveAddress } from '@/store/slices/addressesSlice';
 import { useFreshStore } from '@/store/useFreshStore';
 
 const residenceTypes = [
@@ -50,7 +53,10 @@ const CONFLICTS: Record<string, string[]> = {
 };
 
 export default function AddressSetupScreen() {
-  const { addAddress } = useFreshStore();
+  const { addresses, profile } = useFreshStore();
+  const dispatch = useAppDispatch();
+  const addressLoading = useAppSelector((state) => state.addresses.isSaving);
+  const addressError = useAppSelector((state) => state.addresses.error);
   const params = useLocalSearchParams<{
     fullAddress?: string;
     areaName?: string;
@@ -99,20 +105,41 @@ export default function AddressSetupScreen() {
   const canSubmit =
     flatDetails.trim().length > 0 &&
     (residenceType === 'Independent' || blockTower.trim().length > 0) &&
-    pincode.trim().length >= 6 &&
-    currentLocationText.trim().length > 0;
+    /^\d{6}$/.test(pincode.trim()) &&
+    currentLocationText.trim().length > 0 &&
+    params.latitude !== undefined && Number.isFinite(Number(params.latitude)) &&
+    params.longitude !== undefined && Number.isFinite(Number(params.longitude));
 
-  const handleSubmit = () => {
-    addAddress({
-      label: residenceType,
-      line1: [flatDetails.trim(), blockTower.trim()].filter(Boolean).join(', '),
-      city: params.city ?? '',
-      pincode: pincode.trim(),
-      isDefault: true,
-      deliveryInstructions: instructions.join(', '),
-    });
+  const handleSubmit = async () => {
+    if (!canSubmit || addressLoading) return;
 
-    router.replace('/complete-profile');
+    const instructionValues: Record<string, DeliveryInstruction> = {
+      'Pet at home': 'PET_AT_HOME',
+      'Leave at door': 'LEAVE_AT_DOOR',
+      'Ring bell': 'RING_BELL',
+      'Place in bag': 'PLACE_IN_BAG',
+      'At shoe rack': 'AT_SHOE_RACK',
+      'At security': 'AT_SECURITY',
+    };
+
+    try {
+      await dispatch(saveAddress({
+        residenceType: residenceType === 'Community/Apartment' ? 'COMMUNITY_APARTMENT' : 'INDEPENDENT',
+        flatNoApartmentFloor: flatDetails.trim(),
+        blockTower: blockTower.trim(),
+        pincode: pincode.trim(),
+        landmark: landmark.trim() || undefined,
+        lat: Number(params.latitude),
+        lng: Number(params.longitude),
+        deliveryInstructions: instructions.map((instruction) => instructionValues[instruction]),
+        isDefault: addresses.length === 0,
+        city: params.city ?? '',
+      })).unwrap();
+
+      router.replace(profile.profileCompleted ? '/(tabs)' : '/complete-profile');
+    } catch {
+      // The rejected thunk stores the API error in Redux for display.
+    }
   };
 
   return (
@@ -232,6 +259,9 @@ export default function AddressSetupScreen() {
             {currentLocationText || 'Tap to select your location on map'}
           </Text>
         </Pressable>
+        {!!addressError && (
+          <Text className="mt-1 text-[13px] font-raleway-semibold text-red-600">{addressError}</Text>
+        )}
 
         {/* Delivery Instructions */}
         <Text className="mb-2 mt-6 text-[15px] font-raleway-semibold text-[#111827]">
@@ -287,14 +317,16 @@ export default function AddressSetupScreen() {
         <View className="mt-7">
           <Pressable
             onPress={handleSubmit}
-            //disabled={!canSubmit}
-            className={`rounded-full items-center justify-center  h-16 px-4 py-3 bg-[#023E8A] `}
+            disabled={!canSubmit || addressLoading}
+            className={`h-16 items-center justify-center rounded-full px-4 py-3 ${canSubmit && !addressLoading ? 'bg-[#023E8A]' : 'bg-[#93A9FF]'}`}
           >
-            <Text
-              className={`text-center text-[20px] font-raleway-semibold text-white`}
-            >
-              Save & Continue
-            </Text>
+            {addressLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text className="text-center text-[20px] font-raleway-semibold text-white">
+                Save & Continue
+              </Text>
+            )}
           </Pressable>
         </View>
       </ScrollView>

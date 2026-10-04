@@ -20,8 +20,6 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.01,
 };
 
-const GEOCODING_API_KEY = process.env.EXPO_PUBLIC_GEOCODING_API_KEY;
-
 export default function MapPickerScreen() {
   const mapRef = useRef<MapView>(null);
   const [region, setRegion] = useState<Region>(DEFAULT_REGION);
@@ -29,6 +27,7 @@ export default function MapPickerScreen() {
   const [searching, setSearching] = useState(false);
   const [resolvingAddress, setResolvingAddress] = useState(false);
   const [locatingDevice, setLocatingDevice] = useState(false);
+  const [locationError, setLocationError] = useState('');
   const [areaName, setAreaName] = useState('');
   const [fullAddress, setFullAddress] = useState('');
   const [pincode, setPincode] = useState('');
@@ -38,38 +37,45 @@ export default function MapPickerScreen() {
     useCurrentLocation();
   }, []);
 
-  // Reverse geocode: coordinates -> readable address (Google Geocoding API)
+  // Resolve the selected coordinates using the device geocoder.
   const reverseGeocodeRegion = async (r: Region) => {
     try {
       setResolvingAddress(true);
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${r.latitude},${r.longitude}&key=${GEOCODING_API_KEY}`,
-      );
-      const data = await response.json();
+      setLocationError('');
+      setFullAddress('');
+      setPincode('');
+      setCity('');
+      const results = await Location.reverseGeocodeAsync({
+        latitude: r.latitude,
+        longitude: r.longitude,
+      });
+      const result = results[0];
 
-      if (data.status !== 'OK' || !data.results?.length) {
-        console.log('Reverse geocode failed:', data.status, data.error_message);
+      if (!result) {
+        setLocationError('Could not find an address for this map location. Move the map and try again.');
         return;
       }
 
-      const result = data.results[0];
-      const components = result.address_components;
-
-      const findComponent = (type: string) =>
-        components.find((c: any) => c.types.includes(type))?.long_name;
-
       const area =
-        findComponent('sublocality') ||
-        findComponent('neighborhood') ||
-        findComponent('locality') ||
-        'Selected location';
+        result.district || result.subregion || result.city || 'Selected location';
+      const address = [
+        result.name,
+        result.street,
+        result.streetNumber,
+        result.district,
+        result.subregion,
+        result.city,
+        result.region,
+        result.postalCode,
+      ].filter((part): part is string => !!part);
 
       setAreaName(area);
-      setFullAddress(result.formatted_address);
-      setCity(findComponent('locality') || findComponent('administrative_area_level_2') || '');
-      setPincode(findComponent('postal_code') || '');
+      setFullAddress([...new Set(address)].join(', '));
+      setCity(result.city || result.subregion || '');
+      setPincode(result.postalCode || '');
     } catch (error) {
       console.log('Reverse geocode error:', error);
+      setLocationError('Could not read this location. Move the map and try again.');
     } finally {
       setResolvingAddress(false);
     }
@@ -81,6 +87,7 @@ export default function MapPickerScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
 
       if (status !== Location.PermissionStatus.GRANTED) {
+        setLocationError('Location permission is needed to use your current location.');
         return;
       }
 
@@ -97,36 +104,32 @@ export default function MapPickerScreen() {
 
       setRegion(nextRegion);
       mapRef.current?.animateToRegion(nextRegion, 500);
-      reverseGeocodeRegion(nextRegion);
+      await reverseGeocodeRegion(nextRegion);
     } catch (error) {
       console.log('Location error:', error);
+      setLocationError('Could not get your live location. Check location services and try again.');
     } finally {
       setLocatingDevice(false);
     }
   };
 
-  // Forward geocode: search text -> coordinates (Google Geocoding API)
+  // Forward geocode: search text -> coordinates.
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
     try {
       setSearching(true);
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          searchQuery.trim(),
-        )}&key=${GEOCODING_API_KEY}`,
-      );
-      const data = await response.json();
-
-      if (data.status !== 'OK' || !data.results?.length) {
-        console.log('Search failed:', data.status, data.error_message);
+      setLocationError('');
+      const results = await Location.geocodeAsync(searchQuery.trim());
+      if (!results.length) {
+        setLocationError('No matching location found. Try another search.');
         return;
       }
 
-      const location = data.results[0].geometry.location;
+      const location = results[0];
       const nextRegion: Region = {
-        latitude: location.lat,
-        longitude: location.lng,
+        latitude: location.latitude,
+        longitude: location.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       };
@@ -136,6 +139,7 @@ export default function MapPickerScreen() {
       reverseGeocodeRegion(nextRegion);
     } catch (error) {
       console.log('Search error:', error);
+      setLocationError('Location search failed. Try again.');
     } finally {
       setSearching(false);
     }
@@ -147,7 +151,7 @@ export default function MapPickerScreen() {
   };
 
   const handleConfirm = () => {
-    router.push({
+    router.navigate({
       pathname: '/address-setup',
       params: {
         fullAddress,
@@ -241,6 +245,10 @@ export default function MapPickerScreen() {
             )}
           </View>
         </View>
+
+        {!!locationError && (
+          <Text className="mt-2 text-[13px] leading-[18px] text-red-600">{locationError}</Text>
+        )}
 
         <Pressable
           onPress={handleConfirm}

@@ -1,7 +1,8 @@
 
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -18,48 +19,79 @@ import {
   X,
 } from 'lucide-react-native';
 import { colors, PrimaryButton } from '@/components/FreshComponents';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  deleteAddress,
+  DeliveryInstruction,
+  fetchAddresses,
+  ResidenceType,
+  setDefaultAddress,
+  updateAddress,
+} from '@/store/slices/addressesSlice';
 import { useFreshStore } from '@/store/useFreshStore';
 import { Address } from '@/types/fresh';
 
+const instructionValues: Record<string, DeliveryInstruction> = {
+  'Pet at home': 'PET_AT_HOME',
+  'Leave at door': 'LEAVE_AT_DOOR',
+  'Ring bell': 'RING_BELL',
+  'Place in bag': 'PLACE_IN_BAG',
+  'At shoe rack': 'AT_SHOE_RACK',
+  'At security': 'AT_SECURITY',
+};
+
 export default function AddressesScreen() {
-  const { user, updateAddress, deleteAddress } = useFreshStore();
+  const { addresses } = useFreshStore();
+  const dispatch = useAppDispatch();
+  const { isLoading, isUpdating, isDeleting, error } = useAppSelector((state) => state.addresses);
 
   const [editing, setEditing] = useState<Address | null>(null);
-  const [label, setLabel] = useState('');
-  const [line1, setLine1] = useState('');
-  const [city, setCity] = useState('');
+  const [residenceType, setResidenceType] = useState<ResidenceType>('COMMUNITY_APARTMENT');
+  const [flatDetails, setFlatDetails] = useState('');
+  const [blockTower, setBlockTower] = useState('');
   const [pincode, setPincode] = useState('');
+  const [landmark, setLandmark] = useState('');
   const [instructions, setInstructions] = useState('');
+
+  useEffect(() => {
+    dispatch(fetchAddresses());
+  }, [dispatch]);
 
   const openEdit = (address: Address) => {
     setEditing(address);
-    setLabel(address.label);
-    setLine1(address.line1);
-    setCity(address.city);
+    setResidenceType(address.residenceType ?? 'COMMUNITY_APARTMENT');
+    setFlatDetails(address.flatNoApartmentFloor ?? address.line1);
+    setBlockTower(address.blockTower ?? '');
     setPincode(address.pincode);
+    setLandmark(address.landmark ?? '');
     setInstructions(address.deliveryInstructions ?? '');
   };
 
-  const saveEdit = () => {
-    if (
-      !editing ||
-      !line1.trim() ||
-      !city.trim() ||
-      pincode.trim().length < 6
-    ) {
-      return;
+  const saveEdit = async () => {
+    if (!editing || !flatDetails.trim() || !/^\d{6}$/.test(pincode.trim())) return;
+
+    const deliveryInstructions = instructions
+      .split(',')
+      .map((instruction) => instructionValues[instruction.trim()])
+      .filter((instruction): instruction is DeliveryInstruction => !!instruction);
+
+    try {
+      await dispatch(updateAddress({
+        id: editing.id,
+        residenceType,
+        flatNoApartmentFloor: flatDetails.trim(),
+        blockTower: residenceType === 'COMMUNITY_APARTMENT' ? blockTower.trim() : '',
+        pincode: pincode.trim(),
+        landmark: landmark.trim(),
+        lat: editing.lat,
+        lng: editing.lng,
+        deliveryInstructions,
+        city: editing.city,
+      })).unwrap();
+      setEditing(null);
+    } catch {
+      // The rejected thunk stores the API error in Redux for display.
     }
-
-    updateAddress({
-      ...editing,
-      label: label.trim(),
-      line1: line1.trim(),
-      city: city.trim(),
-      pincode: pincode.trim(),
-      deliveryInstructions: instructions.trim(),
-    });
-
-    setEditing(null);
   };
 
   return (
@@ -85,9 +117,11 @@ export default function AddressesScreen() {
         <Text className="mb-4 mt-2 text-[22px] font-raleway-semibold text-[#111827]">
           Delivery Addresses
         </Text>
+        {isLoading && <ActivityIndicator className="my-3" color={colors.primary} />}
+        {!!error && <Text className="mb-3 text-[13px] text-red-600">{error}</Text>}
 
         {/* Address Cards */}
-        {user.addresses.map((address) => (
+        {addresses.map((address) => (
           <View
             key={address.id}
             className="mb-3 rounded-2xl border border-[#E2E8F0] bg-white p-[14px]"
@@ -125,7 +159,7 @@ export default function AddressesScreen() {
 
                 {/* City */}
                 <Text className="mt-0.5 text-[13px] text-[#64748B]">
-                  {address.city} - {address.pincode}
+                  {address.city ? `${address.city} - ` : ''}{address.pincode}
                 </Text>
 
                 {/* Recipient */}
@@ -146,7 +180,15 @@ export default function AddressesScreen() {
             </View>
 
             {/* Actions */}
-            <View className="mt-3.5 flex-row gap-2.5 border-t border-[#F1F5F9] pt-3.5">
+            <View className="mt-3.5 flex-row gap-2 border-t border-[#F1F5F9] pt-3.5">
+              {!address.isDefault && (
+                <Pressable
+                  className="flex-1 items-center rounded-xl border border-[#64748B] py-2.5"
+                  onPress={() => dispatch(setDefaultAddress(address.id))}
+                >
+                  <Text className="text-[12px] font-raleway-semibold text-[#475569]">Set default</Text>
+                </Pressable>
+              )}
               {/* Edit */}
               <Pressable
                 className="flex-1 items-center rounded-xl border border-[#023E8A] py-2.5"
@@ -160,13 +202,13 @@ export default function AddressesScreen() {
               {/* Delete */}
               <Pressable
                 className="flex-1 flex-row items-center justify-center gap-1 rounded-xl border border-[#EF4444] py-2.5"
-                onPress={() => deleteAddress(address.id)}
-                disabled={user.addresses.length === 1}
+                onPress={() => dispatch(deleteAddress(address.id))}
+                disabled={addresses.length === 1 || isDeleting}
               >
                 <Trash2
                   size={14}
                   color={
-                    user.addresses.length === 1
+                    addresses.length === 1 || isDeleting
                       ? colors.muted
                       : colors.red
                   }
@@ -174,7 +216,7 @@ export default function AddressesScreen() {
 
                 <Text
                   className={`text-[13px] font-raleway-semibold ${
-                    user.addresses.length === 1
+                    addresses.length === 1 || isDeleting
                       ? 'text-[#64748B]'
                       : 'text-[#EF4444]'
                   }`}
@@ -228,32 +270,39 @@ export default function AddressesScreen() {
               </Pressable>
             </View>
 
-            {/* Label */}
+            <View className="mb-2.5 flex-row gap-2">
+              {([
+                ['COMMUNITY_APARTMENT', 'Community/Apartment'],
+                ['INDEPENDENT', 'Independent'],
+              ] as const).map(([value, title]) => (
+                <Pressable
+                  key={value}
+                  onPress={() => setResidenceType(value)}
+                  className={`flex-1 items-center rounded-xl border px-2 py-3 ${residenceType === value ? 'border-[#023E8A] bg-[#EEF3FF]' : 'border-[#E2E8F0]'}`}
+                >
+                  <Text className="text-[12px] font-raleway-semibold text-[#111827]">{title}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Flat or house details */}
             <TextInput
               className="mb-2.5 rounded-xl border border-[#E2E8F0] px-[14px] py-[13px] text-[14px] text-[#111827]"
-              placeholder="Label"
+              placeholder="Flat / House No. / Floor"
               placeholderTextColor={colors.muted}
-              value={label}
-              onChangeText={setLabel}
+              value={flatDetails}
+              onChangeText={setFlatDetails}
             />
 
-            {/* Address */}
-            <TextInput
-              className="mb-2.5 rounded-xl border border-[#E2E8F0] px-[14px] py-[13px] text-[14px] text-[#111827]"
-              placeholder="Flat / House No. & Street"
-              placeholderTextColor={colors.muted}
-              value={line1}
-              onChangeText={setLine1}
-            />
-
-            {/* City */}
-            <TextInput
-              className="mb-2.5 rounded-xl border border-[#E2E8F0] px-[14px] py-[13px] text-[14px] text-[#111827]"
-              placeholder="City"
-              placeholderTextColor={colors.muted}
-              value={city}
-              onChangeText={setCity}
-            />
+            {residenceType === 'COMMUNITY_APARTMENT' && (
+              <TextInput
+                className="mb-2.5 rounded-xl border border-[#E2E8F0] px-[14px] py-[13px] text-[14px] text-[#111827]"
+                placeholder="Block / Tower"
+                placeholderTextColor={colors.muted}
+                value={blockTower}
+                onChangeText={setBlockTower}
+              />
+            )}
 
             {/* Pincode */}
             <TextInput
@@ -264,6 +313,14 @@ export default function AddressesScreen() {
               onChangeText={setPincode}
               keyboardType="number-pad"
               maxLength={6}
+            />
+
+            <TextInput
+              className="mb-2.5 rounded-xl border border-[#E2E8F0] px-[14px] py-[13px] text-[14px] text-[#111827]"
+              placeholder="Landmark (optional)"
+              placeholderTextColor={colors.muted}
+              value={landmark}
+              onChangeText={setLandmark}
             />
 
             {/* Instructions */}
@@ -278,12 +335,8 @@ export default function AddressesScreen() {
             />
 
             <PrimaryButton
-              label="Save Address"
-              disabled={
-                !line1.trim() ||
-                !city.trim() ||
-                pincode.trim().length < 6
-              }
+              label={isUpdating ? 'Saving...' : 'Save Address'}
+              disabled={isUpdating || !flatDetails.trim() || !/^\d{6}$/.test(pincode.trim()) || (residenceType === 'COMMUNITY_APARTMENT' && !blockTower.trim())}
               onPress={saveEdit}
             />
           </View>

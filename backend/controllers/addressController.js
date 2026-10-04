@@ -83,8 +83,51 @@ const updateAddress = asyncHandler(async (req, res) => {
 
 // DELETE /addresses/:id
 const deleteAddress = asyncHandler(async (req, res) => {
-  await pool.query('DELETE FROM addresses WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
-  return ApiResponse.success(res, null, 200, 'Address deleted');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: addressRows } = await client.query(
+      `SELECT a.is_default OR u.default_address_id = a.id AS was_default
+       FROM addresses a
+       JOIN users u ON u.id = a.user_id
+       WHERE a.id = $1 AND a.user_id = $2
+       FOR UPDATE OF a, u`,
+      [req.params.id, req.user.id]
+    );
+    if (addressRows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Address not found' });
+    }
+
+    await client.query(
+      'UPDATE users SET default_address_id = NULL WHERE id = $1 AND default_address_id = $2',
+      [req.user.id, req.params.id]
+    );
+    await client.query('DELETE FROM addresses WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+
+    if (addressRows[0].was_default) {
+      const { rows: remainingAddresses } = await client.query(
+        'SELECT id FROM addresses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+        [req.user.id]
+      );
+      const nextDefaultId = remainingAddresses[0]?.id;
+      if (nextDefaultId) {
+        await client.query(
+          'UPDATE addresses SET is_default = (id = $2) WHERE user_id = $1',
+          [req.user.id, nextDefaultId]
+        );
+        await client.query('UPDATE users SET default_address_id = $1 WHERE id = $2', [nextDefaultId, req.user.id]);
+      }
+    }
+
+    await client.query('COMMIT');
+    return ApiResponse.success(res, null, 200, 'Address deleted');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 });
 
 // PATCH /addresses/:id/set-default

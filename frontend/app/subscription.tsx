@@ -23,7 +23,7 @@ import { formatDate } from '@/lib/cutoff';
 export default function SubscriptionScreen() {
   const {
     subscription,
-    user,
+    addresses,
     updateSubscription,
     products,
   } = useFreshStore();
@@ -32,9 +32,9 @@ export default function SubscriptionScreen() {
     (p) => p.id === subscription.productId
   )!;
 
-  const addr = user.addresses.find(
+  const addr = addresses.find(
     (a) => a.id === subscription.deliveryAddressId
-  )!;
+  ) ?? addresses[0];
 
   return (
     <View className="flex-1 bg-[#F7F9FC]">
@@ -111,7 +111,7 @@ export default function SubscriptionScreen() {
               </Text>
 
               <Text className="mt-0.5 text-[14px] font-bold text-[#111827]">
-                {addr.label} · {addr.line1}, {addr.city}
+                {addr ? `${addr.label} · ${addr.line1}, ${addr.city}` : 'Add a delivery address'}
               </Text>
             </View>
           </View>

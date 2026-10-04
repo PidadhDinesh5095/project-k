@@ -1,7 +1,6 @@
-import { Address, Invoice, Notification, Order, Product, Subscription, User, WalletTransaction } from '@/types/fresh';
+import { Address, Invoice, Notification, Order, Product, Subscription, WalletTransaction } from '@/types/fresh';
 
 export const address: Address = { id: 'home', label: 'Home', line1: '12 Lake View Apartments, HSR Layout', city: 'Bangalore', pincode: '560102', isDefault: true };
-export const user: User = { id: 'u1', name: 'praveena', firstName: 'praveena', phone: '+91 9440028747', addresses: [address], walletBalance: 250, paymentMethods: ['UPI · ananya@okbank'] };
 const milkNutrition = [
   { label: 'Protein (g)', value: '3.3' },
   { label: 'Sodium (mg)', value: '40.0' },

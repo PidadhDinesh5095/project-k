@@ -118,6 +118,8 @@ function isSameDate(first: Date, second: Date) {
 export default function HomeScreen() {
   const {
     user,
+    addresses,
+    profile,
     walletBalance,
     subscription,
   } = useFreshStore();
@@ -229,15 +231,15 @@ export default function HomeScreen() {
                   className=" text-[18px] font-raleway-bold text-[#111827]"
                   numberOfLines={1}
                 >
-                  {greeting}, {user.name}!
+                  {greeting}, {profile.details.firstName || user.name}!
                 </Text>
 
                 <Text
                   className="mt-[2px] text-[11px] font-raleway-semibold text-[#32323366]"
                   numberOfLines={1}
                 >
-                  {user.addresses?.[0]?.line1 ??
-                    user.addresses?.[0]?.city ??
+                  {addresses?.[0]?.line1 ??
+                    addresses?.[0]?.city ??
                     ''}
                 </Text>
               </View>

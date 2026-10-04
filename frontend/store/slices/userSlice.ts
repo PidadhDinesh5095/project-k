@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { user as seededUser } from '@/lib/mockData';
 import { authService, SendOtpResult, VerifyOtpResult } from '@/lib/authService';
-import { Address, User } from '@/types/fresh';
+import { fetchAddresses } from '@/store/slices/addressesSlice';
+import { fetchProfile, setProfileCompleted } from '@/store/slices/profileSlice';
+import { User } from '@/types/fresh';
 
 type UserState = User & {
   isLoading: boolean;
@@ -12,7 +13,6 @@ type UserState = User & {
   refreshToken: string | null;
   isRegistered: boolean | null;
   isNewUser: boolean;
-  profileCompleted: boolean;
 };
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -40,26 +40,27 @@ export const verifyOtp = createAsyncThunk<
   { rejectValue: string }
 >(
   'user/verifyOtp',
-  async ({ phone, otp }, { rejectWithValue }) => {
+  async ({ phone, otp }, { rejectWithValue, dispatch }) => {
     try {
-      return await authService.verifyOtp(phone, otp);
+      const result = await authService.verifyOtp(phone, otp);
+      dispatch(setProfileCompleted(result.profileCompleted));
+      dispatch(fetchProfile());
+      dispatch(fetchAddresses());
+      return result;
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, 'Unable to verify OTP'));
     }
   },
 );
 
-type ProfileDetails = {
-  firstName: string;
-  lastName?: string;
-  email?: string;
-  birthDate: string;
-};
-
 const userSlice = createSlice({
   name: 'user',
   initialState: {
-    ...seededUser,
+    id: '',
+    name: '',
+    phone: '',
+    walletBalance: 0,
+    paymentMethods: [],
     isLoading: false,
     error: null,
     isAuthenticated: false,
@@ -67,7 +68,6 @@ const userSlice = createSlice({
     refreshToken: null,
     isRegistered: null,
     isNewUser: false,
-    profileCompleted: false,
   } as UserState,
   reducers: {
     clearAuthError: (state) => {
@@ -75,35 +75,6 @@ const userSlice = createSlice({
     },
     setPhone: (state, action: PayloadAction<string>) => {
       state.phone = action.payload;
-    },
-    updateProfile: (state, action: PayloadAction<ProfileDetails>) => {
-      state.firstName = action.payload.firstName;
-      state.lastName = action.payload.lastName;
-      state.email = action.payload.email;
-      state.birthDate = action.payload.birthDate;
-      state.name = [action.payload.firstName, action.payload.lastName]
-        .filter(Boolean)
-        .join(' ');
-    },
-    addAddress: (state, action: PayloadAction<Omit<Address, 'id'>>) => {
-      state.addresses = [
-        ...state.addresses.map((address) => ({ ...address, isDefault: false })),
-        { ...action.payload, id: `address-${Date.now()}`, isDefault: true },
-      ];
-    },
-    updateAddress: (state, action: PayloadAction<Address>) => {
-      const idx = state.addresses.findIndex((a) => a.id === action.payload.id);
-      if (idx !== -1) {
-        state.addresses[idx] = action.payload;
-        if (action.payload.isDefault) {
-          state.addresses.forEach((a, i) => { if (i !== idx) a.isDefault = false; });
-        }
-      }
-    },
-    deleteAddress: (state, action: PayloadAction<string>) => {
-      const wasDefault = state.addresses.find((a) => a.id === action.payload)?.isDefault;
-      state.addresses = state.addresses.filter((a) => a.id !== action.payload);
-      if (wasDefault && state.addresses.length > 0) state.addresses[0].isDefault = true;
     },
   },
   extraReducers: (builder) => {
@@ -129,12 +100,11 @@ const userSlice = createSlice({
       .addCase(verifyOtp.fulfilled, (state, action) => {
         state.isLoading = false;
         state.id = action.payload.user.id;
-        state.phone = action.payload.user.phone.slice(-10);
+        state.phone = action.meta.arg.phone;
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
         state.isNewUser = action.payload.isNewUser;
-        state.profileCompleted = action.payload.profileCompleted;
         state.error = null;
       })
       .addCase(verifyOtp.rejected, (state, action) => {
@@ -148,9 +118,5 @@ const userSlice = createSlice({
 export const {
   clearAuthError,
   setPhone,
-  updateProfile,
-  addAddress,
-  updateAddress,
-  deleteAddress,
 } = userSlice.actions;
 export default userSlice.reducer;

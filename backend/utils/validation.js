@@ -15,15 +15,15 @@ const schemas = {
 
   completeProfile: Joi.object({
     firstName: Joi.string().trim().min(1).max(50).required(),
-    lastName: Joi.string().trim().min(1).max(50).required(),
+    lastName: Joi.string().trim().max(50).allow('', null),
     email: Joi.string().email().allow('', null),
     dob: Joi.date().iso().max('now').allow('', null),
   }),
   updateProfile: Joi.object({
     firstName: Joi.string().trim().min(1).max(50),
-    lastName: Joi.string().trim().min(1).max(50),
-    email: Joi.string().email(),
-    dob: Joi.date().iso().max('now'),
+    lastName: Joi.string().trim().max(50).allow('', null),
+    email: Joi.string().email().allow('', null),
+    dob: Joi.date().iso().max('now').allow('', null),
   }),
 
   createAddress: Joi.object({
