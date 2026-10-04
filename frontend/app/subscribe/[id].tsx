@@ -1,0 +1,519 @@
+
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ArrowLeft, CalendarDays, Check, Plus, Minus } from 'lucide-react-native';
+import { useFreshStore } from '@/store/useFreshStore';
+
+const dayShortNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const dayLongNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const productImages: Record<string, any> = {
+  'A2BufalloMilk-removebg-preview.png': require('@/assets/images/products/A2BufalloMilk-removebg-preview.png'),
+  'CowMilk-removebg-preview.png': require('@/assets/images/products/CowMilk-removebg-preview.png'),
+  'TonedMilk-removebg-preview.png': require('@/assets/images/products/TonedMilk-removebg-preview.png'),
+  'SkimMilk-removebg-preview.png': require('@/assets/images/products/SkimMilk-removebg-preview.png'),
+  'HighProteinMilk-removebg-preview.png': require('@/assets/images/products/HighProteinMilk-removebg-preview.png'),
+  'malaipanner-removebg-preview.png': require('@/assets/images/products/malaipanner-removebg-preview.png'),
+  'Curd-removebg-preview.png': require('@/assets/images/products/Curd-removebg-preview.png'),
+  'CowCurd-removebg-preview.png': require('@/assets/images/products/CowCurd-removebg-preview.png'),
+  'buffaloghee-removebg-preview.png': require('@/assets/images/products/buffaloghee-removebg-preview.png'),
+  'cowghee-removebg-preview.png': require('@/assets/images/products/cowghee-removebg-preview.png'),
+  'buffalobutter-removebg-preview.png': require('@/assets/images/products/buffalobutter-removebg-preview.png'),
+  'cowbutter-removebg-preview.png': require('@/assets/images/products/cowbutter-removebg-preview.png'),
+};
+
+function formatDisplayDate(date: Date) {
+  return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+}
+
+function getDateKey(date: Date): string {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function getSlotAvailability(selectedDate: Date, currentDate: Date): {
+  Morning: boolean;
+  Evening: boolean;
+} {
+  const selectedKey = getDateKey(selectedDate);
+  const todayKey = getDateKey(currentDate);
+  const nextDayKey = getDateKey(new Date(currentDate.getTime() + 24 * 60 * 60 * 1000));
+
+  if (selectedKey === todayKey) {
+    return {
+      Morning: false,
+      Evening: currentDate.getHours() < 12,
+    };
+  }
+
+  if (selectedKey === nextDayKey && currentDate.getHours() >= 22) {
+    return {
+      Morning: false,
+      Evening: true,
+    };
+  }
+
+  return {
+    Morning: true,
+    Evening: true,
+  };
+}
+
+function generateUpcomingDates(startDate: Date) {
+  const today = new Date(startDate);
+  today.setHours(0, 0, 0, 0);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + index);
+
+    return {
+      value: date,
+      label: `${date.getDate()}`,
+      day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()],
+      full: formatDisplayDate(date),
+    };
+  });
+}
+
+export default function SubscribeScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { products } = useFreshStore();
+
+  const product = products.find((item) => item.id === id) ?? products[0];
+
+  const [frequency, setFrequency] = useState<'Daily' | 'Alternate' | 'Custom'>('Daily');
+  const [selectedSlots, setSelectedSlots] = useState<string[]>(['Morning']);
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [selectedDays, setSelectedDays] = useState<string[]>(['Mo', 'Tu', 'We']);
+  const [dailyQty, setDailyQty] = useState(1);
+  const [startQty, setStartQty] = useState(1);
+  const [succeedingQty, setSucceedingQty] = useState(1);
+  const [customQty, setCustomQty] = useState<Record<string, number>>({
+    Mo: 1,
+    Tu: 1,
+    We: 1,
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const now = new Date();
+  const upcomingDates = useMemo(() => generateUpcomingDates(now), [now]);
+  const slotAvailability = useMemo(() => getSlotAvailability(selectedDate, now), [selectedDate, now]);
+
+  const activeDayRows = useMemo(
+    () =>
+      dayShortNames.filter((day) => selectedDays.includes(day)).map((day) => ({
+        day,
+        label: dayLongNames[dayShortNames.indexOf(day)],
+      })),
+    [selectedDays]
+  );
+
+  useEffect(() => {
+    const nextAvailable = ['Morning', 'Evening'].filter(
+      (slot) => slotAvailability[slot as 'Morning' | 'Evening']
+    );
+
+    if (!nextAvailable.length) {
+      setSelectedSlots((current) => (current.length ? [] : current));
+      return;
+    }
+
+    const isValidSelection = selectedSlots.some((slot) => nextAvailable.includes(slot));
+
+    if (!isValidSelection) {
+      setSelectedSlots([nextAvailable[0]]);
+    }
+  }, [selectedDate, slotAvailability]);
+
+  const toggleSlot = (slot: string) => {
+    if (!slotAvailability[slot as 'Morning' | 'Evening']) {
+      return;
+    }
+
+    setSelectedSlots((current) =>
+      current.includes(slot)
+        ? current.filter((item) => item !== slot)
+        : [...current, slot]
+    );
+  };
+
+  const toggleDay = (day: string) => {
+    setSelectedDays((current) => {
+      const exists = current.includes(day);
+      const next = exists ? current.filter((item) => item !== day) : [...current, day];
+
+      if (!next.length) {
+        return [day];
+      }
+
+      return next;
+    });
+
+    setCustomQty((current) => ({
+      ...current,
+      [day]: current[day] ?? 1,
+    }));
+  };
+
+  const handlePlaceOrder = () => {
+    setShowSuccess(true);
+  };
+
+  const currentQuantity =
+    frequency === 'Daily'
+      ? dailyQty
+      : frequency === 'Alternate'
+        ? startQty
+        : selectedDays.length;
+
+  const totalUnits =
+    frequency === 'Daily'
+      ? dailyQty
+      : frequency === 'Alternate'
+        ? startQty + succeedingQty
+        : Object.values(customQty).reduce((sum, qty) => sum + (qty ?? 1), 0);
+
+  return (
+    <View className="flex-1 bg-[#f6f5f3]">
+      <Pressable
+        className="ml-4 mt-4"
+        onPress={() => router.back()}
+        hitSlop={12}
+      >
+        <ArrowLeft size={30} color="#111827" />
+      </Pressable>
+
+      <Text className="ml-6 mt-2 text-[22px] font-raleway-bold tracking-[-0.8px] text-[#111827]">
+        Subscribe
+      </Text>
+
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 18,
+          paddingBottom: 120,
+        }}
+      >
+        <View className="mt-3 flex-row items-center justify-between rounded-[14px] bg-[#f1f1ee] pr-4 pl-2 py-2">
+          <View className="flex-row items-center gap-4 ">
+            <View className="h-[72px] w-[72px]  items-center justify-center overflow-hidden ">
+              <Image
+                source={
+                  product.imageFile
+                    ? productImages[product.imageFile] ?? require('@/assets/images/products/CowMilk-removebg-preview.png')
+                    : require('@/assets/images/products/CowMilk-removebg-preview.png')
+                }
+                className="h-[64px] w-[64px]"
+                resizeMode="contain"
+              />
+            </View>
+
+            <View>
+              <Text className="text-[18px] font-raleway-bold text-[#111827]">
+                {product.name}
+              </Text>
+              <Text className="mt-1 text-[14px] text-[#475569]">{product.size}</Text>
+            </View>
+          </View>
+
+          <Text className="text-[22px] font-bold text-[#023E8A]">
+            ₹{product.price}
+          </Text>
+        </View>
+
+        <Text className="mt-4 text-[16px] font-raleway-bold text-[#111827]">
+          Frequency
+        </Text>
+
+        <View className="mt-3 flex-row gap-3">
+          {(['Daily', 'Alternate', 'Custom'] as const).map((item) => {
+            const active = frequency === item;
+
+            return (
+              <Pressable
+                key={item}
+                onPress={() => setFrequency(item)}
+                className={`flex-row items-center justify-center gap-2 rounded-[18px] px-4 py-2.5 ${
+                  active ? 'bg-[#023E8A]' : 'bg-[#F1F1EE]'
+                }`}
+              >
+                
+                <Text
+                  className={`text-[15px] font-raleway-bold ${
+                    active ? 'text-white' : 'text-[#111827]'
+                  }`}
+                >
+                  {item}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text className="mt-6 text-[16px] font-raleway-bold text-[#111827]">
+          Preferred time slot
+        </Text>
+
+        <View className="mt-3 flex-row gap-2">
+          {['Morning', 'Evening'].map((slot) => {
+            const isSelected = selectedSlots.includes(slot);
+            const disabled = !slotAvailability[slot as 'Morning' | 'Evening'];
+
+            return (
+              <Pressable
+                key={slot}
+                onPress={() => toggleSlot(slot)}
+                disabled={disabled}
+                className={`flex-row items-center justify-center gap-2 rounded-[18px] px-4 py-2.5 ${
+                  isSelected ? 'bg-[#023E8A]' : disabled ? 'bg-[#E5E7EB] opacity-50' : 'bg-[#F1F1EE]'
+                }`}
+              >
+                {isSelected && <Check size={12} color="#fff" />}
+                <Text
+                  className={`text-[15px] font-raleway-bold ${
+                    isSelected ? 'text-white' : disabled ? 'text-[#94A3B8]' : 'text-[#111827]'
+                  }`}
+                >
+                  {slot}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text className="mt-6 text-[16px] font-raleway-bold text-[#111827]">
+          Select Starting Date
+        </Text>
+
+        <Pressable
+          onPress={() => setShowDatePicker(true)}
+          className="mt-3 flex-row items-center justify-between rounded-[18px]  bg-[#f1f1ee] pl-4 pr-6 py-3.5"
+        >
+          <Text className="text-[18px] font-bold text-[#111827]">
+            {formatDisplayDate(selectedDate)}
+          </Text>
+          <View className="h-[1rem] w-[1rem] items-center justify-center rounded-[10px] bg-[#EAF1FF]">
+            <CalendarDays size={22} color="#023E8A" />
+          </View>
+        </Pressable>
+
+        {frequency === 'Daily' && (
+          <View className="mt-4">
+            <Text className="text-[16px] font-raleway-bold text-[#111827]">
+              Select Quantity
+            </Text>
+            <View className="mt-3 flex-row items-center justify-between rounded-[18px]  bg-[#f1f1ee] px-4 py-2.5">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-[18px] font-bold text-[#111827]">{dailyQty}</Text>
+              </View>
+
+              <View className="flex-row items-center gap-3">
+                <Pressable
+                  className="h-10 w-10 items-center justify-center rounded-[10px] "
+                  onPress={() => setDailyQty((qty) => Math.max(1, Math.min(10, qty - 1)))}
+                >
+                  <Minus size={18} color="#023E8A" />
+                </Pressable>
+                <Text className="text-[18px] font-bold text-[#111827]">{dailyQty}</Text>
+                <Pressable
+                  className="h-10 w-10 items-center justify-center rounded-[10px] "
+                  onPress={() => setDailyQty((qty) => Math.min(10, qty + 1))}
+                >
+                  <Plus size={18} color="#023E8A" />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {frequency === 'Alternate' && (
+          <View className="mt-6">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[17px] font-raleway-bold text-[#111827]">
+                Start Date Quantity
+              </Text>
+
+              <View className="mt-2 flex-row items-center gap-3 rounded-[18px]  bg-[#f1f1ee] px-3 py-2.5">
+                <Pressable onPress={() => setStartQty((qty) => Math.max(1, Math.min(10, qty - 1)))}>
+                  <Minus size={18} color="#023E8A" />
+                </Pressable>
+                <Text className="min-w-[24px] text-center text-[18px] font-bold text-[#111827]">
+                  {startQty}
+                </Text>
+                <Pressable onPress={() => setStartQty((qty) => Math.min(10, qty + 1))}>
+                  <Plus size={18} color="#023E8A" />
+                </Pressable>
+              </View>
+            </View>
+
+            <View className="mt-5 flex-row items-center justify-between">
+              <Text className="text-[17px] font-raleway-bold text-[#111827]">
+                Succeeding Day Quantity
+              </Text>
+
+              <View className="mt-2 flex-row items-center gap-3 rounded-[18px]  bg-[#f1f1ee] px-3 py-2.5">
+                <Pressable onPress={() => setSucceedingQty((qty) => Math.max(1, Math.min(10, qty - 1)))}>
+                  <Minus size={18} color="#023E8A" />
+                </Pressable>
+                <Text className="min-w-[24px] text-center text-[18px] font-bold text-[#111827]">
+                  {succeedingQty}
+                </Text>
+                <Pressable onPress={() => setSucceedingQty((qty) => Math.min(10, qty + 1))}>
+                  <Plus size={18} color="#023E8A" />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        )}
+
+        
+
+        {frequency === 'Custom' && (
+          <View className="mt-6">
+            <Text className="text-[18px] font-raleway-bold text-[#111827]">
+              Select Days
+            </Text>
+
+            <View className="mt-3 flex-row gap-2">
+              {dayShortNames.map((day) => {
+                const active = selectedDays.includes(day);
+                return (
+                  <Pressable
+                    key={day}
+                    onPress={() => toggleDay(day)}
+                    className={`h-[44px] w-[48px] items-center justify-center rounded-[12px] ${
+                      active ? 'bg-[#023E8A] text-white' : 'bg-[#f1f1ee] text-black'
+                    }`}
+                  >
+                    <Text
+                      className={`text-[16px] font-raleway-bold ${
+                        active ? 'text-white' : 'text-[#111827]'
+                      }`}
+                    >
+                      {day}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text className="mt-6 text-[18px] font-raleway-bold text-[#111827]">
+              Select Quantity Per Day
+            </Text>
+
+            <View className="mt-3 gap-4">
+              {activeDayRows.map(({ day, label }) => (
+                <View key={day} className="flex-row items-center justify-between">
+                  <Text className="text-[16px] font-raleway-bold text-[#111827]">{label}</Text>
+
+                  <View className="flex-row items-center gap-3 rounded-[18px]  bg-[#f1f1ee] px-3 py-2.5">
+                    <Pressable onPress={() => setCustomQty((current) => ({
+                      ...current,
+                      [day]: Math.max(1, Math.min(10, (current[day] ?? 1) - 1)),
+                    }))}>
+                      <Minus size={18} color="#023E8A" />
+                    </Pressable>
+                    <Text className="min-w-[24px] text-center text-[18px] font-bold text-[#111827]">
+                      {customQty[day] ?? 1}
+                    </Text>
+                    <Pressable onPress={() => setCustomQty((current) => ({
+                      ...current,
+                      [day]: Math.min(10, (current[day] ?? 1) + 1),
+                    }))}>
+                      <Plus size={18} color="#023E8A" />
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      <View className="absolute bottom-0 left-0 right-0 bg-[#f6f5f3] px-4 pb-6 pt-3">
+        <Pressable
+          onPress={handlePlaceOrder}
+          className="h-16 items-center justify-center rounded-[30px] bg-[#023E8A]"
+        >
+          <Text className="text-[20px] font-raleway-bold text-white">Place Order</Text>
+        </Pressable>
+      </View>
+
+      <Modal
+        visible={showDatePicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View className="flex-1 justify-end bg-black/40 mb-3">
+          <View className="rounded-t-[26px] bg-white px-4 pb-8 pt-4">
+            <View className="mb-3 h-1.5 w-12 self-center rounded-full bg-[#D1D5DB]" />
+            <Text className="mb-4 text-center text-[20px] font-raleway-bold text-[#111827]">
+              Select Delivery Date
+            </Text>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className="flex-row gap-3 px-1 mb-4">
+                {upcomingDates.map((dateItem) => {
+                  const active = formatDisplayDate(selectedDate) === dateItem.full;
+
+                  return (
+                    <Pressable
+                      key={dateItem.full}
+                      onPress={() => {
+                        setSelectedDate(dateItem.value);
+                        setShowDatePicker(false);
+                      }}
+                      className={`h-16 w-[60px] items-center justify-center rounded-[14px]  ${
+                        active
+                          ? ' bg-[#023E8A] '
+                          : 'bg-[#E5E7EB]'
+                      }`}
+                    >
+                      <Text className={`text-[12px] font-raleway-bold ${active ? 'text-white' : 'text-black'}`}>
+                        {dateItem.day}
+                      </Text>
+                      <Text className={`mt-2 text-[18px] font-bold ${active ? 'text-white' : 'text-[#111827]'}`}>
+                        {dateItem.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {showSuccess && (
+        <View className="absolute inset-0 items-center justify-center bg-black/40 px-8">
+          <View className="w-full rounded-[22px] bg-white p-6">
+            <View className="mb-4 h-14 w-14 items-center justify-center self-center rounded-full bg-[#22C55E]">
+              <Check size={28} color="#fff" />
+            </View>
+
+            <Text className="text-center text-[22px] font-raleway-bold text-[#111827]">
+              Subscription Added
+            </Text>
+
+            <Text className="mt-2 text-center text-[14px] font-raleway-semibold text-[#475569]">
+              {product.name} is scheduled for {formatDisplayDate(selectedDate)} with {selectedSlots.join(' + ')} slot.
+            </Text>
+
+            <Pressable
+              className="mt-4 h-12 rounded-full bg-[#023E8A] px-5 py-3"
+              onPress={() => {
+                setShowSuccess(false);
+                router.replace('/(tabs)');
+              }}
+            >
+              <Text className="text-center text-[15px] font-raleway-bold text-white">Back to Home</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
