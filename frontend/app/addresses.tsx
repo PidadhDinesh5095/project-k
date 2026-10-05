@@ -163,22 +163,22 @@ export default function AddressesScreen() {
               <View className="flex-1">
                 {/* Label */}
                 <View className="flex-row items-center gap-2">
-                  <Text className="text-[15px] font-raleway-semibold text-[#111827]">
-                    {address.label}
+                  <Text className="text-[18px] font-raleway-bold text-[#111827]">
+                    {address.line1} {address.isDefault && (
+                      <View className="rounded-lg bg-[#023E8A] px-1.5 py-0.5">
+                        <Text className="text-[12px]  font-bold  text-white">
+                          Default
+                        </Text>
+                      </View>
+                    )}
                   </Text>
 
-                  {address.isDefault && (
-                    <View className="rounded-lg bg-[#EEF3FF] px-1.5 py-0.5">
-                      <Text className="text-[10px] font-bold text-[#023E8A]">
-                        Default
-                      </Text>
-                    </View>
-                  )}
+
                 </View>
 
                 {/* Address */}
                 <Text className="mt-1.5 text-[13px] text-[#64748B]">
-                  {address.line1}
+                  {address.label}
                 </Text>
 
                 {/* City */}
@@ -207,35 +207,35 @@ export default function AddressesScreen() {
             <View className="mt-3.5 flex-row gap-2 border-t border-[#F1F5F9] pt-3.5">
               {!address.isDefault && (
                 <Pressable
-                  className={`flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-[#64748B] py-2.5 ${settingDefaultAddressId !== null ? 'opacity-60' : ''}`}
+                  className={`flex-1 flex-row items-center justify-center gap-2 rounded-full border border-[#64748B] py-2.5 ${settingDefaultAddressId !== null ? 'opacity-60' : ''}`}
                   disabled={settingDefaultAddressId !== null}
                   onPress={() => dispatch(setDefaultAddress(address.id))}
                 >
                   {settingDefaultAddressId === address.id ? (
                     <>
                       <ActivityIndicator size="small" color={colors.primary} />
-                      <Text className="text-[12px] font-raleway-semibold text-[#475569]">
+                      <Text className="text-[14px] font-raleway-semibold text-[#475569]">
                         Setting...
                       </Text>
                     </>
                   ) : (
-                    <Text className="text-[12px] font-raleway-semibold text-[#475569]">Set default</Text>
+                    <Text className="text-[14px] font-raleway-semibold text-[#475569]">Set default</Text>
                   )}
                 </Pressable>
               )}
               {/* Edit */}
               <Pressable
-                className="flex-1 items-center rounded-xl border border-[#023E8A] py-2.5"
+                className="flex-1 h-12 items-center justify-center rounded-full border border-[#023E8A] py-2.5"
                 onPress={() => openEdit(address)}
               >
-                <Text className="text-[13px] font-raleway-semibold text-[#023E8A]">
+                <Text className="text-[14px] font-raleway-semibold text-[#023E8A]">
                   Edit
                 </Text>
               </Pressable>
 
               {/* Delete */}
               <Pressable
-                className="flex-1 flex-row items-center justify-center gap-1 rounded-xl border border-[#EF4444] py-2.5"
+                className="flex-1 h-12 flex-row items-center justify-center gap-1 rounded-full border border-[#EF4444] py-2.5"
                 onPress={() => confirmDelete(address)}
                 disabled={isDeleting}
               >
@@ -249,13 +249,14 @@ export default function AddressesScreen() {
                 />
 
                 <Text
-                  className={`text-[13px] font-raleway-semibold ${
-                    isDeleting
+                  className={`text-[13px] font-raleway-semibold ${isDeleting
                       ? 'text-[#64748B]'
                       : 'text-[#EF4444]'
-                  }`}
+                    }`}
                 >
-                  Delete
+                  <Text className="text-[14px] font-raleway-semibold">
+                    Delete
+                  </Text>
                 </Text>
               </Pressable>
             </View>

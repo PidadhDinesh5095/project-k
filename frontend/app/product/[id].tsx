@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Dimensions, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { ArrowLeft, Check, Clock, Share2 ,Calendar } from 'lucide-react-native';
 import { PrimaryButton ,TrustBadgeRow } from '@/components/FreshComponents';
-import { useFreshStore } from '@/store/useFreshStore';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchProductById } from '@/store/slices/productsSlice';
 import { formatDate } from '@/lib/cutoff';
 
 function getDateKey(date: Date): string {
@@ -71,24 +72,6 @@ function getDefaultSlots(dateKey: string | null, currentDate: Date): string[] {
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-const productImages: Record<string, any> = {
-  buffalo: require('@/assets/images/products/A2BufalloMilk.png'),
-  cow: require('@/assets/images/products/CowMilk.png'),
-  cream: require('@/assets/images/products/HighProteinMilk.png'),
-  'toned-milk': require('@/assets/images/products/TonedMilk.png'),
-  'skim-milk': require('@/assets/images/products/SkimMilk.png'),
-  paneer: require('@/assets/images/products/malaipanner.png'),
-  curd: require('@/assets/images/products/Curd.png'),
-  'cow-curd': require('@/assets/images/products/CowCurd.png'),
-  ghee: require('@/assets/images/products/buffaloghee.png'),
-  'cow-ghee': require('@/assets/images/products/cowghee.png'),
-  'buffalo-butter': require('@/assets/images/products/buffalobutter.png'),
-  'cow-butter': require('@/assets/images/products/cowbutter.png'),
-  oat: require('@/assets/images/products/SkimMilk.png'),
-  almond: require('@/assets/images/products/Curd.png'),
-  coconut: require('@/assets/images/products/Curd.png'),
-};
-
 function generateDeliveryDates(currentDate: Date = new Date()): {
   value: string;
   label: string;
@@ -118,10 +101,14 @@ function generateDeliveryDates(currentDate: Date = new Date()): {
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const dispatch = useAppDispatch();
+  const product = useAppSelector((state) => state.products.detailsById[id]);
+  const detailStatus = useAppSelector((state) => state.products.detailStatusById[id] ?? 'idle');
+  const detailError = useAppSelector((state) => state.products.detailErrorsById[id]);
 
-  const { products } = useFreshStore();
-
-  const product = products.find((p) => p.id === id) ?? products[0];
+  useEffect(() => {
+    dispatch(fetchProductById(id));
+  }, [dispatch, id]);
 
   const [showBuyOnce, setShowBuyOnce] = useState(false);
   const [liveDate, setLiveDate] = useState(new Date());
@@ -169,7 +156,7 @@ export default function ProductDetailScreen() {
   }, [liveDate, selectedDate]);
 
   const slotMultiplier = selectedSlots.length === 2 ? 2 : selectedSlots.length === 1 ? 1 : 0;
-  const totalAmount = product.price * quantity * slotMultiplier;
+  const totalAmount = (product?.price ?? 0) * quantity * slotMultiplier;
 
   const highlightColors = [
     { bg: '#EAF3EA', text: '#023E8A' },
@@ -184,14 +171,61 @@ export default function ProductDetailScreen() {
     setShowSuccess(true);
   };
 
+  if (!product) {
+    if (detailStatus === 'failed') {
+      return (
+        <View className="flex-1 items-center justify-center bg-[#f5f4f1] px-8">
+          <Text className="text-center text-[16px] font-raleway-semibold text-[#475569]">
+            {detailError ?? 'Unable to load this product'}
+          </Text>
+          <Pressable
+            onPress={() => dispatch(fetchProductById(id))}
+            className="mt-5 rounded-full bg-[#023E8A] px-5 py-3"
+          >
+            <Text className="text-[14px] font-raleway-bold text-white">Try again</Text>
+          </Pressable>
+          <Pressable onPress={() => router.back()} className="mt-4 p-2">
+            <Text className="text-[14px] font-raleway-bold text-[#023E8A]">Go back</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    return (
+      <View className="flex-1 bg-[#f5f4f1]">
+        <View className="h-[100vw] w-full bg-[#E2E8F0]" />
+        <View className="px-5 pt-6">
+          <View className="h-7 w-3/4 rounded bg-[#E2E8F0]" />
+          <View className="mt-3 h-4 w-1/3 rounded bg-[#E2E8F0]" />
+          <View className="mt-5 h-7 w-1/2 rounded bg-[#E2E8F0]" />
+          <View className="mt-3 h-20 w-full rounded bg-[#E2E8F0]" />
+          <View className="mt-6 h-7 w-2/3 rounded bg-[#E2E8F0]" />
+          <View className="mt-3 h-28 w-full rounded bg-[#E2E8F0]" />
+        </View>
+        <View className="absolute bottom-0 left-0 right-0 gap-3 border-t border-[#e7e5e2] bg-[#f5f4f1] px-4 pb-4 pt-3">
+          <View className="h-8 w-2/3 rounded bg-[#E2E8F0]" />
+          <View className="h-14 w-full rounded-full bg-[#E2E8F0]" />
+        </View>
+      </View>
+    );
+  }
+
+  const detailImages = product.images?.filter(Boolean) ?? [];
+  const galleryImages = detailImages.length ? detailImages : product.mainImgNobg ? [product.mainImgNobg] : [];
+
   return (
     <View className="flex-1 bg-[#f5f4f1]">
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        <Image
-          source={productImages[product.id] ?? productImages.cow}
-          style={{ width: SCREEN_W, height: SCREEN_W , alignSelf: 'center' }}
-          resizeMode="contain"
-        />
+        <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+          {galleryImages.map((image, index) => (
+            <Image
+              key={`${image}-${index}`}
+              source={{ uri: image }}
+              style={{ width: SCREEN_W, height: SCREEN_W, alignSelf: 'center' }}
+              resizeMode="contain"
+            />
+          ))}
+        </ScrollView>
 
         <Pressable
           className="absolute left-5 top-[12px] h-9 w-9 items-center justify-center rounded-full "

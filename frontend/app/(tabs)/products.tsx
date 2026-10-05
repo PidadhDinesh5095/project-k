@@ -1,80 +1,44 @@
 
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
-import { colors, ProductCard, TrustBadgeRow, WalletChip } from '@/components/FreshComponents';
+import { ProductCard, ProductCardSkeleton, TrustBadgeRow, WalletChip } from '@/components/FreshComponents';
+import { fetchProductCategories, fetchProducts } from '@/store/slices/productsSlice';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useFreshStore } from '@/store/useFreshStore';
-import { Product } from '@/types/fresh';
-
-const dairySidebar: Array<{ label: string; key: string; image: number | null }> = [
-  { label: 'All', key: 'All', image: require('@/assets/images/products/all.png') },
-  { label: 'Milk', key: 'Milk', image: require('@/assets/images/products/CowMilk-removebg-preview.png') },
-  { label: 'Curd', key: 'Curd', image: require('@/assets/images/products/CowCurd-removebg-preview.png') },
-  { label: 'Paneer', key: 'Paneer', image: require('@/assets/images/products/malaipanner-removebg-preview.png') },
-  { label: 'Ghee', key: 'Ghee', image: require('@/assets/images/products/buffaloghee-removebg-preview.png') },
-  { label: 'Butter', key: 'Butter', image: require('@/assets/images/products/buffalobutter-removebg-preview.png') },
-];
-
-const nonDairyCategories = ['All', 'Oat Milk', 'Almond Milk', 'Coconut Milk'];
-
-const nonDairyProducts: Product[] = [
-  {
-    id: 'oat',
-    name: 'Oat Milk',
-    size: '1 L',
-    category: 'Oat Milk',
-    price: 180,
-    mrp: 210,
-    tags: ['Plant Based', 'No Added Sugar'],
-    description: 'Smooth, creamy oat milk for everyday sipping.',
-    nextDeliveryDate: '2026-09-08',
-    imageLabel: 'OAT',
-  },
-  {
-    id: 'almond',
-    name: 'Almond Milk',
-    size: '1 L',
-    category: 'Almond Milk',
-    price: 220,
-    mrp: 250,
-    tags: ['Plant Based', 'Rich in Calcium'],
-    description: 'Light almond milk made with premium almonds.',
-    nextDeliveryDate: '2026-09-08',
-    imageLabel: 'ALMOND',
-  },
-  {
-    id: 'coconut',
-    name: 'Coconut Milk',
-    size: '400 ml',
-    category: 'Coconut Milk',
-    price: 140,
-    mrp: 160,
-    tags: ['Plant Based', 'Organic'],
-    description: 'Rich, creamy coconut milk from fresh coconuts.',
-    nextDeliveryDate: '2026-09-08',
-    imageLabel: 'COCONUT',
-  },
-];
 
 export default function ProductsScreen() {
   const [type, setType] = useState<'Dairy' | 'Non-Dairy'>('Dairy');
   const [category, setCategory] = useState('All');
+  const dispatch = useAppDispatch();
+  const { categories, categoriesStatus, categoriesError } = useAppSelector((state) => state.products);
+  const { walletBalance, products, productsStatus, productsError } = useFreshStore();
 
-  const { walletBalance, products } = useFreshStore();
+  useEffect(() => {
+    if (products.length === 0 && productsStatus === 'idle') dispatch(fetchProducts());
+  }, [dispatch, products.length, productsStatus]);
 
-  const categoryOptions: Array<string | { label: string; key: string; image: number | null }> =
-    type === 'Dairy' ? dairySidebar : nonDairyCategories;
+  useEffect(() => {
+    if (categoriesStatus === 'idle') dispatch(fetchProductCategories());
+  }, [categoriesStatus, dispatch]);
+
+  const categoryOptions = categories.filter((item) =>
+    item.type === 'All' || (type === 'Dairy'
+      ? item.type !== 'Dairy' && item.type !== 'Non Dairy'
+      : false)
+  );
+  const typeImages = {
+    Dairy: categories.find((item) => item.type === 'Dairy')?.image_url,
+    'Non-Dairy': categories.find((item) => item.type === 'Non Dairy')?.image_url,
+  };
 
   const visibleProducts = useMemo(() => {
-    const source = type === 'Dairy' ? products : nonDairyProducts;
-
-    if (type === 'Dairy') {
-      if (category === 'All') return source;
-      return source.filter((product) => product.category === category);
-    }
-
-    if (category === 'All') return source;
-    return source.filter((product) => product.category === category);
+    const source = products.filter((product) =>
+      type === 'Dairy' ? product.category !== 'NON_DAIRY' : product.category === 'NON_DAIRY'
+    );
+    return category === 'All'
+      ? source
+      : source.filter((product) => product.category === category);
   }, [category, type, products]);
 
   const chooseType = (next: 'Dairy' | 'Non-Dairy') => {
@@ -112,11 +76,7 @@ export default function ProductsScreen() {
               >
                 <View className="flex-row items-center gap-2">
                   <Image
-                    source={
-                      item === 'Dairy'
-                        ? require('@/assets/images/products/CowMilk-removebg-preview.png')
-                        : require('@/assets/images/products/CowCurd-removebg-preview.png')
-                    }
+                    source={typeImages[item] ? { uri: typeImages[item] } : undefined}
                     className="h-8 w-8"
                     resizeMode="contain"
                   />
@@ -134,12 +94,27 @@ export default function ProductsScreen() {
         </View>
 
         <View className="mt-1 flex-row gap-2">
-          {categoryOptions.map((item) => {
-            const isSidebarItem = type === 'Dairy' && typeof item !== 'string';
-            const label = isSidebarItem ? item.label : String(item);
-            const currentKey = isSidebarItem ? item.key : String(item);
+          {categoriesStatus === 'loading' || categoriesStatus === 'idle' ? (
+            Array.from({ length: type === 'Dairy' ? 6 : 1 }, (_, index) => (
+              <View key={index} className="flex-1 items-center">
+                <View className="h-10 w-10 rounded-xl bg-[#E2E8F0]" />
+                <View className="mt-2 h-3 w-10 rounded bg-[#E2E8F0]" />
+              </View>
+            ))
+          ) : categoriesStatus === 'failed' ? (
+            <Pressable
+              onPress={() => dispatch(fetchProductCategories())}
+              className="flex-1 items-center py-4"
+            >
+              <Text className="text-[12px] font-raleway-semibold text-[#64748B]">
+                {categoriesError ?? 'Unable to load categories'}
+              </Text>
+              <Text className="mt-1 text-[12px] font-raleway-bold text-[#023E8A]">Tap to retry</Text>
+            </Pressable>
+          ) : categoryOptions.map((item) => {
+            const label = item.type;
+            const currentKey = label === 'All' ? 'All' : label.toUpperCase();
             const active = category === currentKey;
-            const icon = isSidebarItem ? item.image : null;
 
             return (
               <Pressable
@@ -150,17 +125,11 @@ export default function ProductsScreen() {
                 }`}
                 style={{ minWidth: 0 }}
               >
-                {icon ? (
-                  <Image
-                    source={icon}
-                    className="h-10 w-10"
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-[#EEF3FF]">
-                    <Text className="text-[10px] font-raleway-semibold text-[#023E8A]">All</Text>
-                  </View>
-                )}
+                <Image
+                  source={{ uri: item.image_url }}
+                  className="h-10 w-10"
+                  resizeMode="contain"
+                />
 
                 <Text
                   className={`mt-2 text-center text-[12px] font-raleway-bold ${
@@ -183,7 +152,21 @@ export default function ProductsScreen() {
             paddingBottom: 100,
           }}
         >
-          {visibleProducts.length === 0 ? (
+          {productsStatus === 'idle' || productsStatus === 'loading' ? (
+            Array.from({ length: 4 }, (_, index) => <ProductCardSkeleton key={index} />)
+          ) : productsStatus === 'failed' ? (
+            <View className="items-center py-10">
+              <Text className="text-center text-[14px] font-raleway-semibold text-[#475569]">
+                {productsError ?? 'Unable to load products'}
+              </Text>
+              <Pressable
+                onPress={() => dispatch(fetchProducts())}
+                className="mt-4 rounded-full bg-[#023E8A] px-5 py-3"
+              >
+                <Text className="text-[14px] font-raleway-bold text-white">Try again</Text>
+              </Pressable>
+            </View>
+          ) : visibleProducts.length === 0 ? (
             <View className="items-center py-[60px]">
               <Text className="text-[16px] font-bold text-[#111827]">
                 No products found

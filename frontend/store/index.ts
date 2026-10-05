@@ -1,5 +1,6 @@
 import { combineReducers, configureStore, type Reducer } from '@reduxjs/toolkit';
 import addresses from '@/store/slices/addressesSlice';
+import homeBanners from '@/store/slices/homeBannersSlice';
 import notifications from '@/store/slices/notificationsSlice';
 import orders from '@/store/slices/ordersSlice';
 import profile from '@/store/slices/profileSlice';
@@ -9,7 +10,7 @@ import user from '@/store/slices/userSlice';
 import { logout } from '@/store/slices/userSlice';
 import wallet from '@/store/slices/walletSlice';
 
-const appReducer = combineReducers({ addresses, profile, user, wallet, subscription, notifications, orders, products });
+const appReducer = combineReducers({ addresses, homeBanners, profile, user, wallet, subscription, notifications, orders, products });
 
 const rootReducer: Reducer<ReturnType<typeof appReducer>> = (state, action) => {
 	if (logout.fulfilled.match(action)) {

@@ -47,8 +47,8 @@ export default function CompleteProfileScreen() {
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
-    if (!profile.hasLoaded) dispatch(fetchProfile());
-  }, [dispatch, profile.hasLoaded]);
+    if (!profile.hasLoaded && !profile.isLoading && !profile.error) dispatch(fetchProfile());
+  }, [dispatch, profile.error, profile.hasLoaded, profile.isLoading]);
 
   useEffect(() => {
     if (!profile.hasLoaded) return;

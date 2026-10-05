@@ -4,11 +4,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StatusBar,
   Text,
   View,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -19,6 +21,12 @@ import {
   Plus,
 } from 'lucide-react-native';
 import { SectionTitle } from '@/components/FreshComponents';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchHomeBanners } from '@/store/slices/homeBannersSlice';
+import { fetchProducts } from '@/store/slices/productsSlice';
+import { fetchProfile } from '@/store/slices/profileSlice';
+import { fetchAddresses } from '@/store/slices/addressesSlice';
+import { fetchOrders } from '@/store/slices/ordersSlice';
 import { useFreshStore } from '@/store/useFreshStore';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -30,61 +38,7 @@ const AUTO_SCROLL_MS = 5000;
 
 const LOGO_URI = require('@/assets/images/logo_nbg.png');
 
-const bannerImages = [
-  { image: require('@/assets/images/home-1.png') },
-  { image: require('@/assets/images/home-2.png') },
-  { image: require('@/assets/images/home-3.png') },
-  { image: require('@/assets/images/home-4.png') },
-  { image: require('@/assets/images/home-5.png') },
-  { image: require('@/assets/images/home-6.png') },
-  { image: require('@/assets/images/home-7.png') },
-  { image: require('@/assets/images/home-8.png') },
-];
-
-const popularProducts = [
-  {
-    id: 'buffalo',
-    name: 'A2 Buffalo Milk',
-    price: 72,
-    originalPrice: 80,
-    image: require('@/assets/images/products/A2BufalloMilk-removebg-preview.png'),
-  },
-  {
-    id: 'cow',
-    name: 'Cow Milk',
-    price: 58,
-    originalPrice: 64,
-    image: require('@/assets/images/products/CowMilk-removebg-preview.png'),
-  },
-  {
-    id: 'cream',
-    name: 'High Protein Milk',
-    price: 82,
-    originalPrice: 90,
-    image: require('@/assets/images/products/HighProteinMilk-removebg-preview.png'),
-  },
-  {
-    id: 'toned-milk',
-    name: 'Toned Milk',
-    price: 60,
-    originalPrice: 66,
-    image: require('@/assets/images/products/TonedMilk-removebg-preview.png'),
-  },
-  {
-    id: 'curd',
-    name: 'Curd',
-    price: 48,
-    originalPrice: 55,
-    image: require('@/assets/images/products/Curd-removebg-preview.png'),
-  },
-  {
-    id: 'ghee',
-    name: 'Buffalo Ghee',
-    price: 690,
-    originalPrice: 760,
-    image: require('@/assets/images/products/buffaloghee-removebg-preview.png'),
-  },
-];
+const fallbackBannerImage = require('@/assets/images/home-1.png');
 
 function getGreeting(date: Date = new Date()) {
   const hour = date.getHours();
@@ -115,18 +69,33 @@ function isSameDate(first: Date, second: Date) {
   );
 }
 
+function getLocalDateKey(date: Date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
 export default function HomeScreen() {
+  const dispatch = useAppDispatch();
+  const { items: homeBanners, status: bannerStatus } = useAppSelector((state) => state.homeBanners);
+  const { listStatus: productsStatus, listError: productsError } = useAppSelector((state) => state.products);
+  const { hasLoaded: profileHasLoaded, isLoading: profileIsLoading, error: profileError } = useAppSelector((state) => state.profile);
+  const { hasLoaded: addressesHaveLoaded, isLoading: addressesAreLoading, error: addressesError } = useAppSelector((state) => state.addresses);
+  const { hasLoaded: ordersHaveLoaded, isLoading: ordersAreLoading, error: ordersError } = useAppSelector((state) => state.orders);
+  const bannerSkeletonOpacity = useRef(new Animated.Value(0.45)).current;
+  const isBannerLoading = bannerStatus === 'idle' || bannerStatus === 'loading';
+  const displayBanners =
+    bannerStatus === 'failed' || homeBanners.length === 0
+      ? [{ id: 'fallback', image_url: '', link_url: null }]
+      : homeBanners;
+
   const {
     user,
     addresses,
     profile,
     walletBalance,
-    subscription,
+    products,
+    orders,
   } = useFreshStore();
-
-  const product = popularProducts.find(
-    (p) => p.id === subscription.productId
-  );
 
   const greeting = useMemo(() => getGreeting(), []);
 
@@ -151,19 +120,13 @@ export default function HomeScreen() {
     });
   };
 
-  const hasDeliveryOnSelectedDate = useMemo(() => {
-    if (!subscription.nextDeliveryDate) {
-      return false;
-    }
-
-    const nextDelivery = new Date(subscription.nextDeliveryDate);
-
-    if (Number.isNaN(nextDelivery.getTime())) {
-      return false;
-    }
-
-    return isSameDate(nextDelivery, selectedDate);
-  }, [subscription.nextDeliveryDate, selectedDate]);
+  const selectedDateDelivery = useMemo(
+    () => orders.find((order) =>
+      order.status === 'Upcoming' && order.date.slice(0, 10) === getLocalDateKey(selectedDate)
+    ),
+    [orders, selectedDate]
+  );
+  const deliveryItem = selectedDateDelivery?.items[0];
 
   const isToday = isSameDate(selectedDate, today);
 
@@ -172,9 +135,64 @@ export default function HomeScreen() {
   const bannerIndex = useRef(0);
 
   useEffect(() => {
+    if (bannerStatus === 'idle') dispatch(fetchHomeBanners());
+    if (productsStatus === 'idle' && products.length === 0) dispatch(fetchProducts());
+    if (!profileHasLoaded && !profileIsLoading && !profileError) dispatch(fetchProfile());
+    if (!addressesHaveLoaded && !addressesAreLoading && !addressesError) dispatch(fetchAddresses());
+    if (!ordersHaveLoaded && !ordersAreLoading && !ordersError) dispatch(fetchOrders());
+  }, [
+    addressesAreLoading,
+    addressesError,
+    addressesHaveLoaded,
+    bannerStatus,
+    dispatch,
+    ordersAreLoading,
+    ordersError,
+    ordersHaveLoaded,
+    products.length,
+    productsStatus,
+    profileError,
+    profileHasLoaded,
+    profileIsLoading,
+  ]);
+
+  useEffect(() => {
+    if (!isBannerLoading) {
+      bannerSkeletonOpacity.setValue(0.45);
+      return;
+    }
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bannerSkeletonOpacity, {
+          toValue: 0.9,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bannerSkeletonOpacity, {
+          toValue: 0.45,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    pulse.start();
+    return () => pulse.stop();
+  }, [isBannerLoading, bannerSkeletonOpacity]);
+
+  useEffect(() => {
+    setActiveBanner(0);
+    bannerIndex.current = 0;
+    bannerScroll.current?.scrollTo({ x: 0, animated: false });
+  }, [displayBanners.length]);
+
+  useEffect(() => {
+    if (displayBanners.length < 2) return;
+
     const interval = setInterval(() => {
       const nextIndex =
-        (bannerIndex.current + 1) % bannerImages.length;
+        (bannerIndex.current + 1) % displayBanners.length;
 
       bannerIndex.current = nextIndex;
       setActiveBanner(nextIndex);
@@ -186,7 +204,7 @@ export default function HomeScreen() {
     }, AUTO_SCROLL_MS);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [displayBanners.length]);
 
   const handleBannerMomentumEnd = (e: any) => {
     const idx = Math.round(
@@ -301,9 +319,13 @@ export default function HomeScreen() {
               </View>
 
               <Text className="mt-4 text-center text-[13px] font-raleway-semibold text-[#94A3B8]">
-                {hasDeliveryOnSelectedDate && product
-                  ? `${product.name} · ${subscription.timeSlot}`
-                  : 'No Scheduled deliveries'}
+                {ordersAreLoading
+                  ? 'Loading delivery schedule...'
+                  : ordersError
+                    ? 'Delivery schedule unavailable'
+                  : deliveryItem
+                    ? `${deliveryItem.name} · ${selectedDateDelivery?.deliverySlot ?? ''}`
+                    : 'No Scheduled deliveries'}
               </Text>
 
               <View className="mt-4 h-[54px] flex-row overflow-hidden border-t border-[#DCE5FF]">
@@ -343,51 +365,92 @@ export default function HomeScreen() {
         </View>
 
         <View className="mt-1">
-          <ScrollView
-            ref={bannerScroll}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={handleBannerMomentumEnd}
-            scrollEventThrottle={16}
-          >
-            {bannerImages.map((banner, i) => (
-              <View
-                key={i}
-                style={{ width: SCREEN_W }}
-                className="items-center justify-center px-5"
-              >
-                <Image
-                  source={banner.image}
-                  style={{
-                    width: BANNER_WIDTH,
-                    height: BANNER_HEIGHT,
-                  }}
-                  className="rounded-[24px]"
-                />
-              </View>
-            ))}
-          </ScrollView>
-
-          <View className="mt-3 flex-row items-center justify-center gap-[6px]">
-            {bannerImages.map((_, i) => (
-              <View
-                key={i}
-                className={
-                  i === activeBanner
-                    ? 'h-[4px] w-[18px] rounded-full bg-[#023E8A]'
-                    : 'h-[4px] w-[8px] rounded-full bg-[#CBD5E1]'
-                }
+          {isBannerLoading ? (
+            <View style={{ width: SCREEN_W }} className="items-center justify-center px-5">
+              <Animated.View
+                accessibilityLabel="Loading banners"
+                style={{
+                  width: BANNER_WIDTH,
+                  height: BANNER_HEIGHT,
+                  opacity: bannerSkeletonOpacity,
+                }}
+                className="rounded-[24px] bg-[#E2E8F0]"
               />
-            ))}
-          </View>
+            </View>
+          ) : (
+            <>
+              <ScrollView
+                ref={bannerScroll}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={handleBannerMomentumEnd}
+                scrollEventThrottle={16}
+              >
+                {displayBanners.map((banner, i) => (
+                  <View
+                    key={banner.id}
+                    style={{ width: SCREEN_W }}
+                    className="items-center justify-center px-5"
+                  >
+                    <Pressable
+                      disabled={!banner.link_url}
+                      onPress={() => {
+                        if (banner.link_url) void Linking.openURL(banner.link_url);
+                      }}
+                    >
+                      <Image
+                        source={banner.image_url ? { uri: banner.image_url } : fallbackBannerImage}
+                        style={{
+                          width: BANNER_WIDTH,
+                          height: BANNER_HEIGHT,
+                        }}
+                        className="rounded-[24px]"
+                      />
+                    </Pressable>
+                  </View>
+                ))}
+              </ScrollView>
+
+              <View className="mt-3 flex-row items-center justify-center gap-[6px]">
+                {displayBanners.map((banner, i) => (
+                  <View
+                    key={banner.id}
+                    className={
+                      i === activeBanner
+                        ? 'h-[4px] w-[18px] rounded-full bg-[#023E8A]'
+                        : 'h-[4px] w-[8px] rounded-full bg-[#CBD5E1]'
+                    }
+                  />
+                ))}
+              </View>
+            </>
+          )}
         </View>
 
         <View className="bg-white px-5 pt-5">
           <SectionTitle title="Popular Products" />
 
           <View className="mt-1 flex-row flex-wrap justify-between">
-            {popularProducts.map((p) => (
+            {productsStatus === 'idle' || productsStatus === 'loading' ? (
+              Array.from({ length: 6 }, (_, index) => (
+                <View key={index} style={{ width: '48%' }} className="mb-4 rounded-[16px] bg-neutral-100 p-[10px]">
+                  <View className="h-[140px] w-full rounded bg-[#E2E8F0]" />
+                  <View className="mt-3 ml-2 h-4 w-4/5 rounded bg-[#E2E8F0]" />
+                  <View className="mt-3 ml-2 h-4 w-2/5 rounded bg-[#E2E8F0]" />
+                </View>
+              ))
+            ) : productsStatus === 'failed' ? (
+              <Pressable
+                onPress={() => dispatch(fetchProducts())}
+                className="w-full items-center py-8"
+              >
+                <Text className="text-[14px] font-raleway-semibold text-[#475569]">
+                  {productsError ?? 'Unable to load products'}
+                </Text>
+                <Text className="mt-2 text-[14px] font-raleway-bold text-[#023E8A]">Try again</Text>
+              </Pressable>
+            ) : products.slice(0, 6).map((p) => (
               <Pressable
                 key={p.id}
                 onPress={() => router.push(`/product/${p.id}`)}
@@ -395,7 +458,7 @@ export default function HomeScreen() {
                 className="mb-4 rounded-[16px]  bg-neutral-100 p-[10px]"
               >
                 <Image
-                  source={p.image}
+                  source={p.mainImgNobg ? { uri: p.mainImgNobg } : fallbackBannerImage}
                   className="h-[140px] w-full"
                   resizeMode="contain"
                 />
@@ -414,7 +477,7 @@ export default function HomeScreen() {
                       textDecorationLine: 'line-through',
                     }}
                   >
-                    ₹{p.originalPrice}
+                    ₹{p.mrp}
                   </Text>
 
                   <Text className="text-[17px] text-[#023E8A]">

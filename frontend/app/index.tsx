@@ -4,10 +4,20 @@ import { useEffect, useState } from 'react';
 import { fetchAddresses } from '@/store/slices/addressesSlice';
 import { fetchProfile } from '@/store/slices/profileSlice';
 import { restoreSession } from '@/store/slices/userSlice';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 export default function Index() {
   const dispatch = useAppDispatch();
+  const shouldFetchProfile = useAppSelector((state) =>
+    (!state.profile.hasLoaded || !state.user.phone) &&
+    !state.profile.isLoading &&
+    !state.profile.error
+  );
+  const shouldFetchAddresses = useAppSelector((state) =>
+    !state.addresses.hasLoaded &&
+    !state.addresses.isLoading &&
+    !state.addresses.error
+  );
   const [destination, setDestination] = useState<'/(tabs)' | '/onboarding' | null>(null);
 
   useEffect(() => {
@@ -24,8 +34,8 @@ export default function Index() {
 
         if (accessToken) {
           dispatch(restoreSession({ accessToken, refreshToken }));
-          dispatch(fetchProfile());
-          dispatch(fetchAddresses());
+          if (shouldFetchProfile) dispatch(fetchProfile());
+          if (shouldFetchAddresses) dispatch(fetchAddresses());
           setDestination('/(tabs)');
         } else {
           setDestination('/onboarding');
@@ -40,7 +50,7 @@ export default function Index() {
     return () => {
       isMounted = false;
     };
-  }, [dispatch]);
+  }, [dispatch, shouldFetchAddresses, shouldFetchProfile]);
 
   return destination ? <Redirect href={destination} /> : null;
 }

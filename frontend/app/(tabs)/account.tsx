@@ -1,6 +1,6 @@
 
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { router } from 'expo-router';
+import { useEffect } from 'react';
 import {
   Alert,
   Pressable,
@@ -29,6 +29,7 @@ import { useFreshStore } from '@/store/useFreshStore';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/userSlice';
 import { fetchProfile } from '@/store/slices/profileSlice';
+import { fetchProducts } from '@/store/slices/productsSlice';
 import { formatDate } from '@/lib/cutoff';
 
 const allSubscriptions = [
@@ -66,16 +67,18 @@ const allSubscriptions = [
 
 export default function AccountScreen() {
   const dispatch = useAppDispatch();
-  const { user, profile, walletBalance, products } = useFreshStore();
+  const { user, profile, walletBalance, products, productsStatus } = useFreshStore();
   const profileName = [profile.details.firstName, profile.details.lastName].filter(Boolean).join(' ') || user.name;
 
   const {isLoggingOut} = user;
 
-  useFocusEffect(
-    useCallback(() => {
-      dispatch(fetchProfile());
-    }, [dispatch]),
-  );
+  useEffect(() => {
+    if (!profile.hasLoaded && !profile.isLoading && !profile.error) dispatch(fetchProfile());
+  }, [dispatch, profile.error, profile.hasLoaded, profile.isLoading]);
+
+  useEffect(() => {
+    if (products.length === 0 && productsStatus === 'idle') dispatch(fetchProducts());
+  }, [dispatch, products.length, productsStatus]);
 
   const handleLogout = async () => {
     try {
@@ -190,7 +193,7 @@ export default function AccountScreen() {
         {allSubscriptions.map((sub) => {
           const product = products.find(
             (p) => p.id === sub.productId
-          )!;
+          );
 
           return (
             <View
@@ -216,7 +219,7 @@ export default function AccountScreen() {
 
               {/* Product */}
               <Text className="mt-[10px] text-[16px] font-bold text-[#111827]">
-                {product.name}
+                {product?.name ?? 'Product details unavailable'}
               </Text>
 
               {/* Meta */}

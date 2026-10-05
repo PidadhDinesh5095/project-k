@@ -196,6 +196,13 @@ const userSlice = createSlice({
         state.error = null;
       })
 
+      .addCase(fetchProfile.fulfilled, (state, action) => {
+        state.id = action.payload.userId;
+        state.phone = action.payload.phone.startsWith('91')
+          ? action.payload.phone.slice(2)
+          : action.payload.phone;
+      })
+
       .addCase(verifyOtp.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload ?? 'Unable to verify OTP';

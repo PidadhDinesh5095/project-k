@@ -138,7 +138,9 @@ export function ProductCard({
   onPress: () => void;
   onAdd: () => void;
 }) {
-  const imageSource = product.imageFile
+  const imageSource = product.mainImgNobg
+    ? { uri: product.mainImgNobg }
+    : product.imageFile
     ? productImages[product.imageFile]
     : productImages[product.id];
 
@@ -227,6 +229,23 @@ export function ProductCard({
         </Pressable>
       </View>
     </Pressable>
+  );
+}
+
+export function ProductCardSkeleton() {
+  return (
+    <View className="mb-3 rounded-2xl bg-neutral-100 p-2">
+      <View className="flex-row">
+        <View className="m-2 h-[110px] w-[110px] rounded-xl bg-[#E2E8F0]" />
+        <View className="ml-6 mt-3 flex-1">
+          <View className="h-5 w-4/5 rounded bg-[#E2E8F0]" />
+          <View className="mt-3 h-3 w-3/5 rounded bg-[#E2E8F0]" />
+          <View className="mt-3 h-5 w-2/3 rounded bg-[#E2E8F0]" />
+          <View className="mt-3 h-5 w-1/2 rounded bg-[#E2E8F0]" />
+        </View>
+      </View>
+      <View className="mt-2 h-12 rounded-full bg-[#E2E8F0]" />
+    </View>
   );
 }
 

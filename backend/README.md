@@ -18,7 +18,7 @@ Node.js + Express + PostgreSQL backend. Boot-tested — `node server.js` starts 
 
 **Addresses** — `GET /api/addresses/check-serviceability`, `POST /api/addresses`, `GET /api/addresses`, `PATCH /api/addresses/:id`, `DELETE /api/addresses/:id`, `PATCH /api/addresses/:id/set-default`
 
-**Home** — `GET /api/home/banners`, `GET /api/home/popular-products` (both Redis-cached, 5 min TTL)
+**Home** — `GET /api/home/banners` (public, reads `home_banners`, Redis-cached for 1 hour), `GET /api/home/popular-products` (authenticated, Redis-cached for 5 min)
 
 **Wallet** — `GET /api/wallet`, `POST /api/wallet/topup`, `POST /api/wallet/topup/verify`, `GET /api/wallet/transactions`
 
@@ -49,5 +49,5 @@ Node.js + Express + PostgreSQL backend. Boot-tested — `node server.js` starts 
 
 ## Still needs a decision from you
 
-- `HOME_BANNERS_JSON` and serviceable pincodes are env-driven placeholders since there's no admin panel in scope yet — swap for real tables the moment banners/serviceability need to be editable without a deploy.
+- Serviceable pincodes remain env-driven until they need to be editable without a deploy.
 - Firebase push notifications are wired but silently no-op until `FIREBASE_SERVICE_ACCOUNT_BASE64` is set — confirm FCM is actually your intended push provider.

@@ -10,6 +10,8 @@ export type ProfileFields = {
 };
 
 type ApiProfile = {
+  id: string;
+  phone: string;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
@@ -55,12 +57,21 @@ function toProfileDetails(profile: ApiProfile): ProfileFields {
   };
 }
 
-export const fetchProfile = createAsyncThunk<ProfileState['details'] & { profileCompleted: boolean }, void, { rejectValue: string }>(
+export const fetchProfile = createAsyncThunk<
+  ProfileState['details'] & { profileCompleted: boolean; userId: string; phone: string },
+  void,
+  { rejectValue: string }
+>(
   'profile/fetch',
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get<ApiResponse<ApiProfile>>('/profile/me');
-      return { ...toProfileDetails(response.data.data), profileCompleted: response.data.data.profile_completed };
+      return {
+        ...toProfileDetails(response.data.data),
+        profileCompleted: response.data.data.profile_completed,
+        userId: response.data.data.id,
+        phone: response.data.data.phone,
+      };
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, 'Unable to load profile'));
     }
@@ -148,6 +159,7 @@ const profileSlice = createSlice({
       })
       .addCase(completeProfile.fulfilled, (state, action) => {
         state.isSaving = false;
+        state.hasLoaded = true;
         state.profileCompleted = true;
         state.details = action.payload;
       })
@@ -161,6 +173,7 @@ const profileSlice = createSlice({
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.isSaving = false;
+        state.hasLoaded = true;
         state.details = action.payload;
       })
       .addCase(updateProfile.rejected, (state, action) => {

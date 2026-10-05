@@ -3,17 +3,29 @@ import { redisClient } from '../config/redis.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
-const CACHE_TTL_SECONDS = 300;
+const CACHE_TTL_SECONDS = 60 * 60;
 
 // GET /home/banners
-// Kept in an env/config value for now since there's no admin panel in scope yet;
-// swap for a `banners` table the moment these need to be editable without a deploy.
 const getBanners = asyncHandler(async (req, res) => {
-  const cached = await redisClient.get('home:banners');
-  if (cached) return ApiResponse.success(res, cached);
+  try {
+    const cached = await redisClient.get('home:banners');
+    if (cached !== null) return ApiResponse.success(res, cached);
+  } catch (error) {
+    console.error('[home] banner cache read failed:', error.message);
+  }
 
-  const banners = JSON.parse(process.env.HOME_BANNERS_JSON || '[]');
-  await redisClient.set('home:banners', banners, { ex: CACHE_TTL_SECONDS });
+  const { rows: banners } = await pool.query(
+    `SELECT id, image_url, link_url, display_order
+     FROM home_banners
+     ORDER BY COALESCE(display_order, 0) ASC, created_at DESC`
+  );
+
+  try {
+    await redisClient.set('home:banners', banners, { ex: CACHE_TTL_SECONDS });
+  } catch (error) {
+    console.error('[home] banner cache write failed:', error.message);
+  }
+
   return ApiResponse.success(res, banners);
 });
 
