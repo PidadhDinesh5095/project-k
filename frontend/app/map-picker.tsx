@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import {
@@ -22,7 +22,31 @@ const DEFAULT_REGION: Region = {
 
 export default function MapPickerScreen() {
   const mapRef = useRef<MapView>(null);
-  const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+  const params = useLocalSearchParams<{
+    addressId?: string;
+    residenceType?: string;
+    flatNoApartmentFloor?: string;
+    blockTower?: string;
+    landmark?: string;
+    deliveryInstructions?: string;
+    currentFullAddress?: string;
+    city?: string;
+    pincode?: string;
+    latitude?: string;
+    longitude?: string;
+  }>();
+  const hasInitialLocation = Boolean(
+    params.addressId && params.latitude && params.longitude &&
+    Number.isFinite(Number(params.latitude)) && Number.isFinite(Number(params.longitude))
+  );
+  const initialRegion: Region = hasInitialLocation
+    ? {
+        ...DEFAULT_REGION,
+        latitude: Number(params.latitude),
+        longitude: Number(params.longitude),
+      }
+    : DEFAULT_REGION;
+  const [region, setRegion] = useState<Region>(initialRegion);
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [resolvingAddress, setResolvingAddress] = useState(false);
@@ -30,12 +54,8 @@ export default function MapPickerScreen() {
   const [locationError, setLocationError] = useState('');
   const [areaName, setAreaName] = useState('');
   const [fullAddress, setFullAddress] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [city, setCity] = useState('');
-
-  useEffect(() => {
-    useCurrentLocation();
-  }, []);
+  const [pincode, setPincode] = useState(params.pincode ?? '');
+  const [city, setCity] = useState(params.city ?? '');
 
   // Resolve the selected coordinates using the device geocoder.
   const reverseGeocodeRegion = async (r: Region) => {
@@ -113,6 +133,14 @@ export default function MapPickerScreen() {
     }
   };
 
+  useEffect(() => {
+    if (hasInitialLocation) {
+      void reverseGeocodeRegion(initialRegion);
+    } else {
+      void useCurrentLocation();
+    }
+  }, []);
+
   // Forward geocode: search text -> coordinates.
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -154,6 +182,12 @@ export default function MapPickerScreen() {
     router.navigate({
       pathname: '/address-setup',
       params: {
+        addressId: params.addressId ?? '',
+        residenceType: params.residenceType ?? '',
+        flatNoApartmentFloor: params.flatNoApartmentFloor ?? '',
+        blockTower: params.blockTower ?? '',
+        landmark: params.landmark ?? '',
+        deliveryInstructions: params.deliveryInstructions ?? '',
         fullAddress,
         areaName,
         city,
@@ -170,9 +204,9 @@ export default function MapPickerScreen() {
         ref={mapRef}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         style={{ flex: 1, width: '100%', height: '100%' }}
-        initialRegion={DEFAULT_REGION}
+        initialRegion={initialRegion}
         onRegionChangeComplete={handleRegionChangeComplete}
-        showsUserLocation
+        showsUserLocation={false}
         showsMyLocationButton={false}
         scrollEnabled
         zoomEnabled

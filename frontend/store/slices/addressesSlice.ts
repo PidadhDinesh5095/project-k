@@ -104,6 +104,7 @@ export const updateAddress = createAsyncThunk<Address, UpdateAddressInput, { rej
   'addresses/update',
   async ({ id, city = '', ...fields }, { rejectWithValue }) => {
     try {
+      console.log('Updating address with fields:', fields);
       const response = await api.patch<ApiResponse<ApiAddress>>(`/addresses/${id}`, fields);
       return toAddress(response.data.data, city);
     } catch (error) {
@@ -142,6 +143,7 @@ type AddressesState = {
   isSaving: boolean;
   isUpdating: boolean;
   isDeleting: boolean;
+  settingDefaultAddressId: string | null;
   error: string | null;
   hasLoaded: boolean;
 };
@@ -152,6 +154,7 @@ const initialState: AddressesState = {
   isSaving: false,
   isUpdating: false,
   isDeleting: false,
+  settingDefaultAddressId: null,
   error: null,
   hasLoaded: false,
 };
@@ -225,12 +228,18 @@ const addressesSlice = createSlice({
         state.error = action.payload ?? 'Unable to delete address';
       })
       .addCase(setDefaultAddress.fulfilled, (state, action) => {
+        state.settingDefaultAddressId = null;
         state.items = state.items.map((address) => ({
           ...address,
           isDefault: address.id === action.payload,
         }));
       })
+      .addCase(setDefaultAddress.pending, (state, action) => {
+        state.settingDefaultAddressId = action.meta.arg;
+        state.error = null;
+      })
       .addCase(setDefaultAddress.rejected, (state, action) => {
+        state.settingDefaultAddressId = null;
         state.error = action.payload ?? 'Unable to set default address';
       });
   },

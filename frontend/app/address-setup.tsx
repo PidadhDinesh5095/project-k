@@ -24,7 +24,13 @@ import {
 } from 'lucide-react-native';
 import { colors } from '@/components/FreshComponents';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { DeliveryInstruction, saveAddress } from '@/store/slices/addressesSlice';
+import {
+  AddressFields,
+  DeliveryInstruction,
+  ResidenceType as ApiResidenceType,
+  saveAddress,
+  updateAddress,
+} from '@/store/slices/addressesSlice';
 import { useFreshStore } from '@/store/useFreshStore';
 
 const residenceTypes = [
@@ -55,9 +61,15 @@ const CONFLICTS: Record<string, string[]> = {
 export default function AddressSetupScreen() {
   const { addresses, profile } = useFreshStore();
   const dispatch = useAppDispatch();
-  const addressLoading = useAppSelector((state) => state.addresses.isSaving);
+  const addressLoading = useAppSelector((state) => state.addresses.isSaving || state.addresses.isUpdating);
   const addressError = useAppSelector((state) => state.addresses.error);
   const params = useLocalSearchParams<{
+    addressId?: string;
+    residenceType?: string;
+    flatNoApartmentFloor?: string;
+    blockTower?: string;
+    landmark?: string;
+    deliveryInstructions?: string;
     fullAddress?: string;
     areaName?: string;
     city?: string;
@@ -76,11 +88,31 @@ export default function AddressSetupScreen() {
   const [currentLocationText, setCurrentLocationText] = useState('');
   const [instructions, setInstructions] = useState<string[]>([]);
 
-  // Populate fields once when returning from the map picker
+  // Populate address fields when editing or returning from the map picker.
   useEffect(() => {
+    if (params.addressId || params.flatNoApartmentFloor) {
+      setResidenceType(params.residenceType === 'INDEPENDENT' ? 'Independent' : 'Community/Apartment');
+      setFlatDetails(params.flatNoApartmentFloor ?? '');
+      setBlockTower(params.blockTower ?? '');
+      setLandmark(params.landmark ?? '');
+      setInstructions(
+        (params.deliveryInstructions ?? '').split(',').map((item) => item.trim()).filter(Boolean),
+      );
+      setCurrentLocationText(params.fullAddress || params.city || 'Saved location');
+    }
     if (params.fullAddress) setCurrentLocationText(params.fullAddress);
     if (params.pincode) setPincode(params.pincode);
-  }, [params.fullAddress, params.pincode]);
+  }, [
+    params.addressId,
+    params.residenceType,
+    params.flatNoApartmentFloor,
+    params.blockTower,
+    params.landmark,
+    params.deliveryInstructions,
+    params.fullAddress,
+    params.city,
+    params.pincode,
+  ]);
 
   const toggleInstruction = (key: string) => {
     setInstructions((prev) => {
@@ -123,17 +155,27 @@ export default function AddressSetupScreen() {
     };
 
     try {
-      await dispatch(saveAddress({
-        residenceType: residenceType === 'Community/Apartment' ? 'COMMUNITY_APARTMENT' : 'INDEPENDENT',
+      const addressFields: AddressFields = {
+        residenceType: (residenceType === 'Community/Apartment' ? 'COMMUNITY_APARTMENT' : 'INDEPENDENT') as ApiResidenceType,
         flatNoApartmentFloor: flatDetails.trim(),
-        blockTower: blockTower.trim(),
+        blockTower: residenceType === 'Community/Apartment' ? blockTower.trim() : '',
         pincode: pincode.trim(),
-        landmark: landmark.trim() || undefined,
+        landmark: landmark.trim(),
         lat: Number(params.latitude),
         lng: Number(params.longitude),
         deliveryInstructions: instructions.map((instruction) => instructionValues[instruction]),
-        isDefault: addresses.length === 0,
         city: params.city ?? '',
+      };
+
+      if (params.addressId) {
+        await dispatch(updateAddress({ ...addressFields, id: params.addressId })).unwrap();
+        router.replace('/addresses');
+        return;
+      }
+
+      await dispatch(saveAddress({
+        ...addressFields,
+        isDefault: addresses.length === 0,
       })).unwrap();
 
       router.replace(profile.profileCompleted ? '/(tabs)' : '/complete-profile');
@@ -150,7 +192,7 @@ export default function AddressSetupScreen() {
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}>
         <Text className="mt-2 text-[22px] font-raleway-semibold text-[#111827]">
-          Address
+          {params.addressId ? 'Edit Address' : 'Address'}
         </Text>
 
         {/* Residence Type */}
@@ -187,6 +229,40 @@ export default function AddressSetupScreen() {
             );
           })}
         </View>
+
+         {/* Current Location — filled from the map picker, tap to change */}
+        <Text className="mb-2 mt-2.5 text-[15px] font-raleway-semibold text-[#111827]">
+          Current Location <Text className="text-red-500">*</Text>
+        </Text>
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: '/map-picker',
+              params: {
+                addressId: params.addressId ?? '',
+                residenceType: residenceType === 'Community/Apartment' ? 'COMMUNITY_APARTMENT' : 'INDEPENDENT',
+                flatNoApartmentFloor: flatDetails,
+                blockTower,
+                landmark,
+                deliveryInstructions: instructions.join(', '),
+                currentFullAddress: currentLocationText,
+                city: params.city ?? '',
+                pincode,
+                latitude: params.latitude ?? '',
+                longitude: params.longitude ?? '',
+              },
+            })
+          }
+          className="mb-2.5 flex-row items-start gap-2 rounded-xl border border-[#E2E8F0] px-[14px] py-[14px]"
+        >
+          <MapPin size={16} color={colors.primary} style={{ marginTop: 2 }} />
+          <Text className="flex-1 text-[14px] leading-[20px] font-raleway-semibold text-[#111827]">
+            {currentLocationText || 'Tap to select your location on map'}
+          </Text>
+        </Pressable>
+        {!!addressError && (
+          <Text className="mt-1 text-[13px] font-raleway-semibold text-red-600">{addressError}</Text>
+        )}
 
         {/* Flat / Apartment */}
         <Text className="mb-2 mt-6 text-[15px] font-raleway-semibold text-[#111827]">
@@ -242,26 +318,7 @@ export default function AddressSetupScreen() {
           onChangeText={setLandmark}
         />
 
-        {/* Current Location — filled from the map picker, tap to change */}
-        <Text className="mb-2 mt-2.5 text-[15px] font-raleway-semibold text-[#111827]">
-          Current Location <Text className="text-red-500">*</Text>
-        </Text>
-        <Pressable
-          onPress={() =>
-            router.push({
-              pathname: '/map-picker',
-            })
-          }
-          className="mb-2.5 flex-row items-start gap-2 rounded-xl border border-[#E2E8F0] px-[14px] py-[14px]"
-        >
-          <MapPin size={16} color={colors.primary} style={{ marginTop: 2 }} />
-          <Text className="flex-1 text-[14px] leading-[20px] font-raleway-semibold text-[#111827]">
-            {currentLocationText || 'Tap to select your location on map'}
-          </Text>
-        </Pressable>
-        {!!addressError && (
-          <Text className="mt-1 text-[13px] font-raleway-semibold text-red-600">{addressError}</Text>
-        )}
+       
 
         {/* Delivery Instructions */}
         <Text className="mb-2 mt-6 text-[15px] font-raleway-semibold text-[#111827]">
@@ -324,7 +381,7 @@ export default function AddressSetupScreen() {
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text className="text-center text-[20px] font-raleway-semibold text-white">
-                Save & Continue
+                {params.addressId ? 'Update Address' : 'Save & Continue'}
               </Text>
             )}
           </Pressable>

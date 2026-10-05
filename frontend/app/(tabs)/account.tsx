@@ -1,6 +1,8 @@
 
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -24,6 +26,9 @@ import {
   StatusPill,
 } from '@/components/FreshComponents';
 import { useFreshStore } from '@/store/useFreshStore';
+import { useAppDispatch } from '@/store/hooks';
+import { logout } from '@/store/slices/userSlice';
+import { fetchProfile } from '@/store/slices/profileSlice';
 import { formatDate } from '@/lib/cutoff';
 
 const allSubscriptions = [
@@ -60,8 +65,33 @@ const allSubscriptions = [
 ];
 
 export default function AccountScreen() {
+  const dispatch = useAppDispatch();
   const { user, profile, walletBalance, products } = useFreshStore();
   const profileName = [profile.details.firstName, profile.details.lastName].filter(Boolean).join(' ') || user.name;
+
+  const {isLoggingOut} = user;
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchProfile());
+    }, [dispatch]),
+  );
+
+  const handleLogout = async () => {
+    try {
+      const result = await dispatch(logout()).unwrap();
+      router.replace('/onboarding');
+
+      if (!result.serverLogoutSucceeded) {
+        Alert.alert(
+          'Signed out',
+          'This device is signed out, but the server could not invalidate the session.'
+        );
+      }
+    } catch {
+      Alert.alert('Logout failed', 'Unable to clear the saved session. Please try again.');
+    }
+  };
 
   return (
     <View className="flex-1 bg-[#F7F9FC]">
@@ -366,14 +396,15 @@ export default function AccountScreen() {
         {/* Logout */}
         <View className="mt-6">
           <PrimaryButton
-            label="Log Out"
-            onPress={() => router.push('/onboarding')}
+            label={isLoggingOut ? 'Logging Out...' : 'Log Out'}
+            onPress={handleLogout}
+            disabled={isLoggingOut}
           />
         </View>
 
         {/* Version */}
         <Text className="mt-5 text-center text-[11px] text-[#64748B]">
-          Fresh & Pure v1.0.0
+          Dinesh Farms v1.0.0
         </Text>
       </ScrollView>
     </View>

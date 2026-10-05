@@ -25,6 +25,7 @@ export default function OtpScreen() {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [timer, setTimer] = useState(RESEND_SECONDS);
   const inputRefs = useRef<Array<TextInput | null>>([]);
+  const verificationInProgress = useRef(false);
 
   const isComplete = digits.every((d) => d.length === 1);
 
@@ -38,18 +39,44 @@ export default function OtpScreen() {
     inputRefs.current[0]?.focus();
   }, []);
 
+  const submitOtp = async (otp: string) => {
+    if (otp.length !== OTP_LENGTH || verificationInProgress.current) return;
+    verificationInProgress.current = true;
+
+    try {
+      const result = await dispatch(verifyOtp({ phone, otp })).unwrap();
+      if (result.isNewUser) {
+        router.replace('/address-setup');
+      } else if (result.profileCompleted) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/complete-profile');
+      }
+    } catch {
+      // The rejected thunk stores the API message in Redux for display.
+    } finally {
+      verificationInProgress.current = false;
+    }
+  };
+
   const handleChange = (text: string, index: number) => {
     const cleaned = text.replace(/[^0-9]/g, '');
+    dispatch(clearAuthError());
 
     if (cleaned.length > 1) {
-      const chars = cleaned.slice(0, OTP_LENGTH).split('');
-      const next = Array(OTP_LENGTH).fill('');
-      chars.forEach((c, i) => (next[i] = c));
+      const chars = cleaned.slice(0, OTP_LENGTH - index).split('');
+      const next = [...digits];
+      chars.forEach((character, characterIndex) => {
+        next[index + characterIndex] = character;
+      });
       setDigits(next);
-      const lastFilled = Math.min(chars.length, OTP_LENGTH) - 1;
-      inputRefs.current[lastFilled]?.focus();
-      if (chars.length >= OTP_LENGTH) {
+
+      if (next.every((digit) => digit.length === 1)) {
         inputRefs.current[OTP_LENGTH - 1]?.blur();
+        void submitOtp(next.join(''));
+      } else {
+        const nextEmptyIndex = next.findIndex((digit) => digit.length === 0);
+        inputRefs.current[nextEmptyIndex]?.focus();
       }
       return;
     }
@@ -57,10 +84,13 @@ export default function OtpScreen() {
     const next = [...digits];
     next[index] = cleaned;
     setDigits(next);
-    dispatch(clearAuthError());
 
-    if (cleaned && index < OTP_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
+    if (cleaned && next.every((digit) => digit.length === 1)) {
+      inputRefs.current[index]?.blur();
+      void submitOtp(next.join(''));
+    } else if (cleaned) {
+      const nextEmptyIndex = next.findIndex((digit) => digit.length === 0);
+      if (nextEmptyIndex >= 0) inputRefs.current[nextEmptyIndex]?.focus();
     }
   };
 
@@ -76,20 +106,8 @@ export default function OtpScreen() {
     }
   };
 
-  const handleVerify = async () => {
-    if (!isComplete) return;
-    try {
-      const result = await dispatch(verifyOtp({ phone, otp: digits.join('') })).unwrap();
-      if (result.isNewUser) {
-        router.replace('/address-setup');
-      } else if (result.profileCompleted) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/complete-profile');
-      }
-    } catch {
-      // The rejected thunk stores the API message in Redux for display.
-    }
+  const handleVerify = () => {
+    if (isComplete) void submitOtp(digits.join(''));
   };
 
   const handleResend = async () => {
@@ -131,6 +149,8 @@ export default function OtpScreen() {
                   ref={(el) => {
                     inputRefs.current[i] = el;
                   }}
+                  autoFocus={i === 0}
+                  showSoftInputOnFocus
                   className={`aspect-square flex-1 rounded-xl border-2 font-raleway text-center text-[22px] font-bold text-[#111827] ${
                     focusedIndex === i
                       ? 'border-[#023E8A]'
