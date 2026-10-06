@@ -1,6 +1,6 @@
 
-import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import {
   Alert,
   Pressable,
@@ -67,18 +67,17 @@ const allSubscriptions = [
 
 export default function AccountScreen() {
   const dispatch = useAppDispatch();
-  const { user, profile, walletBalance, products, productsStatus } = useFreshStore();
+  const { user, profile, walletBalance, products, productsStatus, productsHasLoaded } = useFreshStore();
   const profileName = [profile.details.firstName, profile.details.lastName].filter(Boolean).join(' ') || user.name;
 
   const {isLoggingOut} = user;
 
-  useEffect(() => {
-    if (!profile.hasLoaded && !profile.isLoading && !profile.error) dispatch(fetchProfile());
-  }, [dispatch, profile.error, profile.hasLoaded, profile.isLoading]);
-
-  useEffect(() => {
-    if (products.length === 0 && productsStatus === 'idle') dispatch(fetchProducts());
-  }, [dispatch, products.length, productsStatus]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!profile.hasLoaded && !profile.isLoading) dispatch(fetchProfile());
+      if (!productsHasLoaded && productsStatus !== 'loading') dispatch(fetchProducts());
+    }, [dispatch, productsHasLoaded, productsStatus, profile.hasLoaded, profile.isLoading]),
+  );
 
   const handleLogout = async () => {
     try {

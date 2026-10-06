@@ -1,7 +1,8 @@
 
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Dimensions, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import * as Linking from 'expo-linking';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, Image, Modal, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { ArrowLeft, Check, Clock, Share2 ,Calendar } from 'lucide-react-native';
 import { PrimaryButton ,TrustBadgeRow } from '@/components/FreshComponents';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -105,10 +106,13 @@ export default function ProductDetailScreen() {
   const product = useAppSelector((state) => state.products.detailsById[id]);
   const detailStatus = useAppSelector((state) => state.products.detailStatusById[id] ?? 'idle');
   const detailError = useAppSelector((state) => state.products.detailErrorsById[id]);
+  const productHasLoaded = useAppSelector((state) => state.products.detailHasLoadedById[id] ?? false);
 
   useEffect(() => {
-    dispatch(fetchProductById(id));
-  }, [dispatch, id]);
+    if (!productHasLoaded && detailStatus !== 'loading') {
+      dispatch(fetchProductById(id));
+    }
+  }, [detailStatus, dispatch, id, productHasLoaded]);
 
   const [showBuyOnce, setShowBuyOnce] = useState(false);
   const [liveDate, setLiveDate] = useState(new Date());
@@ -116,6 +120,7 @@ export default function ProductDetailScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const skeletonOpacity = useRef(new Animated.Value(0.45)).current;
 
   const todayKey = getDateKey(liveDate);
   const isBeforeNoon = liveDate.getHours() < 12;
@@ -125,6 +130,26 @@ export default function ProductDetailScreen() {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(skeletonOpacity, {
+          toValue: 0.8,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(skeletonOpacity, {
+          toValue: 0.45,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animation.start();
+    return () => animation.stop();
+  }, [skeletonOpacity]);
 
   const deliveryDates = useMemo(() => generateDeliveryDates(liveDate), [liveDate]);
 
@@ -171,6 +196,20 @@ export default function ProductDetailScreen() {
     setShowSuccess(true);
   };
 
+  const handleShare = async () => {
+    const shareUrl = Linking.createURL(`/product/${product.id}`);
+
+    try {
+      await Share.share({
+        message: `Check out ${product.name} on Dinesh Farms: ${shareUrl}`,
+        url: shareUrl,
+        title: `Share ${product.name}`,
+      });
+    } catch (error) {
+      console.error('Unable to share product:', error);
+    }
+  };
+
   if (!product) {
     if (detailStatus === 'failed') {
       return (
@@ -193,18 +232,18 @@ export default function ProductDetailScreen() {
 
     return (
       <View className="flex-1 bg-[#f5f4f1]">
-        <View className="h-[100vw] w-full bg-[#E2E8F0]" />
+        <Animated.View className="h-[100vw] w-full rounded-b-[12px] bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
         <View className="px-5 pt-6">
-          <View className="h-7 w-3/4 rounded bg-[#E2E8F0]" />
-          <View className="mt-3 h-4 w-1/3 rounded bg-[#E2E8F0]" />
-          <View className="mt-5 h-7 w-1/2 rounded bg-[#E2E8F0]" />
-          <View className="mt-3 h-20 w-full rounded bg-[#E2E8F0]" />
-          <View className="mt-6 h-7 w-2/3 rounded bg-[#E2E8F0]" />
-          <View className="mt-3 h-28 w-full rounded bg-[#E2E8F0]" />
+          <Animated.View className="h-7 w-3/4 rounded bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
+          <Animated.View className="mt-3 h-4 w-1/3 rounded bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
+          <Animated.View className="mt-5 h-7 w-1/2 rounded bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
+          <Animated.View className="mt-3 h-20 w-full rounded bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
+          <Animated.View className="mt-6 h-7 w-2/3 rounded bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
+          <Animated.View className="mt-3 h-28 w-full rounded bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
         </View>
         <View className="absolute bottom-0 left-0 right-0 gap-3 border-t border-[#e7e5e2] bg-[#f5f4f1] px-4 pb-4 pt-3">
-          <View className="h-8 w-2/3 rounded bg-[#E2E8F0]" />
-          <View className="h-14 w-full rounded-full bg-[#E2E8F0]" />
+          <Animated.View className="h-8 w-2/3 rounded bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
+          <Animated.View className="h-14 w-full rounded-full bg-[#E2E8F0]" style={{ opacity: skeletonOpacity }} />
         </View>
       </View>
     );
@@ -237,9 +276,14 @@ export default function ProductDetailScreen() {
 
         <Pressable
           className="absolute right-5 top-[12px] h-9 w-9 items-center justify-center rounded-full "
+          onPress={handleShare}
           hitSlop={12}
+          accessibilityLabel={`Share ${product.name}`}
+          android_ripple={{ color: '#CBD5E1' }}
         >
-          <Share2 size={24} color="#1F2937" />
+          {({ pressed }) => (
+            <Share2 size={24} color={pressed ? '#94A3B8' : '#1F2937'} />
+          )}
         </Pressable>
 
         <View className="mx-4 mt-4 pb-2">

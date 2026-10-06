@@ -1,6 +1,6 @@
 
-import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   Alert,
   ActivityIndicator,
@@ -29,7 +29,7 @@ import { Address } from '@/types/fresh';
 export default function AddressesScreen() {
   const { addresses } = useFreshStore();
   const dispatch = useAppDispatch();
-  const { isLoading, isDeleting, settingDefaultAddressId, error } = useAppSelector((state) => state.addresses);
+  const { isLoading, isDeleting, settingDefaultAddressId, error, hasLoaded } = useAppSelector((state) => state.addresses);
   const skeletonOpacity = useRef(new Animated.Value(0.45)).current;
 
   useEffect(() => {
@@ -57,9 +57,11 @@ export default function AddressesScreen() {
     return () => pulse.stop();
   }, [isLoading, skeletonOpacity]);
 
-  useEffect(() => {
-    dispatch(fetchAddresses());
-  }, [dispatch]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasLoaded && !isLoading) dispatch(fetchAddresses());
+    }, [dispatch, hasLoaded, isLoading]),
+  );
 
   const openEdit = (address: Address) => {
     router.push({

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { api } from '@/store/api';
+import { readCachedData, writeCachedData } from '@/store/cache';
 import type { Product } from '@/types/fresh';
 
 type ProductApiRecord = {
@@ -29,10 +30,13 @@ type ProductsState = {
   categories: ProductCategory[];
   listStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   listError: string | null;
+  listHasLoaded: boolean;
   categoriesStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   categoriesError: string | null;
+  categoriesHasLoaded: boolean;
   detailStatusById: Record<string, 'idle' | 'loading' | 'succeeded' | 'failed'>;
   detailErrorsById: Record<string, string | null>;
+  detailHasLoadedById: Record<string, boolean>;
 };
 
 const nutritionLabels: Record<string, string> = {
@@ -84,9 +88,14 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export const fetchProducts = createAsyncThunk<Product[], void, { rejectValue: string }>(
   'products/fetch',
   async (_, { rejectWithValue }) => {
+    const cachedProducts = await readCachedData<Product[]>('products:list:v1');
+    if (cachedProducts) return cachedProducts;
+
     try {
       const response = await api.get<ApiResponse<ProductApiRecord[]>>('/products');
-      return response.data.data.map(normalizeProduct);
+      const products = response.data.data.map(normalizeProduct);
+      await writeCachedData('products:list:v1', products);
+      return products;
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, 'Unable to load products'));
     }
@@ -98,8 +107,12 @@ export const fetchProductCategories = createAsyncThunk<
   void,
   { rejectValue: string }
 >('products/fetchCategories', async (_, { rejectWithValue }) => {
+  const cachedCategories = await readCachedData<ProductCategory[]>('products:categories:v1');
+  if (cachedCategories) return cachedCategories;
+
   try {
     const response = await api.get<ApiResponse<ProductCategory[]>>('/products/categories');
+    await writeCachedData('products:categories:v1', response.data.data);
     return response.data.data;
   } catch (error) {
     return rejectWithValue(getErrorMessage(error, 'Unable to load product categories'));
@@ -109,9 +122,14 @@ export const fetchProductCategories = createAsyncThunk<
 export const fetchProductById = createAsyncThunk<Product, string, { rejectValue: string }>(
   'products/fetchById',
   async (id, { rejectWithValue }) => {
+    const cachedProduct = await readCachedData<Product>(`products:detail:${id}:v1`);
+    if (cachedProduct) return cachedProduct;
+
     try {
       const response = await api.get<ApiResponse<ProductApiRecord>>(`/products/${id}`);
-      return normalizeProduct(response.data.data);
+      const product = normalizeProduct(response.data.data);
+      await writeCachedData(`products:detail:${id}:v1`, product);
+      return product;
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, 'Unable to load product'));
     }
@@ -124,10 +142,13 @@ const initialState: ProductsState = {
   categories: [],
   listStatus: 'idle',
   listError: null,
+  listHasLoaded: false,
   categoriesStatus: 'idle',
   categoriesError: null,
+  categoriesHasLoaded: false,
   detailStatusById: {},
   detailErrorsById: {},
+  detailHasLoadedById: {},
 };
 
 const productsSlice = createSlice({
@@ -143,6 +164,7 @@ const productsSlice = createSlice({
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.items = action.payload;
         state.listStatus = 'succeeded';
+        state.listHasLoaded = true;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.listStatus = 'failed';
@@ -155,6 +177,7 @@ const productsSlice = createSlice({
       .addCase(fetchProductCategories.fulfilled, (state, action) => {
         state.categories = action.payload;
         state.categoriesStatus = 'succeeded';
+        state.categoriesHasLoaded = true;
       })
       .addCase(fetchProductCategories.rejected, (state, action) => {
         state.categoriesStatus = 'failed';
@@ -167,6 +190,7 @@ const productsSlice = createSlice({
       .addCase(fetchProductById.fulfilled, (state, action) => {
         state.detailsById[action.payload.id] = action.payload;
         state.detailStatusById[action.payload.id] = 'succeeded';
+        state.detailHasLoadedById[action.payload.id] = true;
         const listItemIndex = state.items.findIndex((item) => item.id === action.payload.id);
         if (listItemIndex >= 0) state.items[listItemIndex] = action.payload;
       })

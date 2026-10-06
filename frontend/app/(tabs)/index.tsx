@@ -1,6 +1,6 @@
 
-import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
@@ -77,7 +77,7 @@ function getLocalDateKey(date: Date) {
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
   const { items: homeBanners, status: bannerStatus } = useAppSelector((state) => state.homeBanners);
-  const { listStatus: productsStatus, listError: productsError } = useAppSelector((state) => state.products);
+  const { listStatus: productsStatus, listError: productsError, listHasLoaded: productsHaveLoaded } = useAppSelector((state) => state.products);
   const { hasLoaded: profileHasLoaded, isLoading: profileIsLoading, error: profileError } = useAppSelector((state) => state.profile);
   const { hasLoaded: addressesHaveLoaded, isLoading: addressesAreLoading, error: addressesError } = useAppSelector((state) => state.addresses);
   const { hasLoaded: ordersHaveLoaded, isLoading: ordersAreLoading, error: ordersError } = useAppSelector((state) => state.orders);
@@ -134,27 +134,26 @@ export default function HomeScreen() {
   const [activeBanner, setActiveBanner] = useState(0);
   const bannerIndex = useRef(0);
 
-  useEffect(() => {
-    if (bannerStatus === 'idle') dispatch(fetchHomeBanners());
-    if (productsStatus === 'idle' && products.length === 0) dispatch(fetchProducts());
-    if (!profileHasLoaded && !profileIsLoading && !profileError) dispatch(fetchProfile());
-    if (!addressesHaveLoaded && !addressesAreLoading && !addressesError) dispatch(fetchAddresses());
-    if (!ordersHaveLoaded && !ordersAreLoading && !ordersError) dispatch(fetchOrders());
-  }, [
-    addressesAreLoading,
-    addressesError,
-    addressesHaveLoaded,
-    bannerStatus,
-    dispatch,
-    ordersAreLoading,
-    ordersError,
-    ordersHaveLoaded,
-    products.length,
-    productsStatus,
-    profileError,
-    profileHasLoaded,
-    profileIsLoading,
-  ]);
+  useFocusEffect(
+    useCallback(() => {
+      if (bannerStatus === 'idle' || bannerStatus === 'failed') dispatch(fetchHomeBanners());
+      if (!productsHaveLoaded && productsStatus !== 'loading') dispatch(fetchProducts());
+      if (!profileHasLoaded && !profileIsLoading) dispatch(fetchProfile());
+      if (!addressesHaveLoaded && !addressesAreLoading) dispatch(fetchAddresses());
+      if (!ordersHaveLoaded && !ordersAreLoading) dispatch(fetchOrders());
+    }, [
+      addressesAreLoading,
+      addressesHaveLoaded,
+      bannerStatus,
+      dispatch,
+      ordersAreLoading,
+      ordersHaveLoaded,
+      productsHaveLoaded,
+      productsStatus,
+      profileHasLoaded,
+      profileIsLoading,
+    ]),
+  );
 
   useEffect(() => {
     if (!isBannerLoading) {

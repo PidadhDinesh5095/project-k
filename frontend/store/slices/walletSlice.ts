@@ -2,9 +2,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { transactions as seededTransactions } from '@/lib/mockData';
 import { WalletTransaction } from '@/types/fresh';
 
-type WalletState = { balance: number; transactions: WalletTransaction[] };
+type WalletState = { balance: number; transactions: WalletTransaction[]; hasLoaded: boolean };
 
-const initialState: WalletState = { balance: 0, transactions: seededTransactions };
+const initialState: WalletState = { balance: 0, transactions: seededTransactions, hasLoaded: false };
 
 const walletSlice = createSlice({
   name: 'wallet',

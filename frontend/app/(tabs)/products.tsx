@@ -1,6 +1,6 @@
 
-import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { ProductCard, ProductCardSkeleton, TrustBadgeRow, WalletChip } from '@/components/FreshComponents';
 import { fetchProductCategories, fetchProducts } from '@/store/slices/productsSlice';
@@ -11,16 +11,15 @@ export default function ProductsScreen() {
   const [type, setType] = useState<'Dairy' | 'Non-Dairy'>('Dairy');
   const [category, setCategory] = useState('All');
   const dispatch = useAppDispatch();
-  const { categories, categoriesStatus, categoriesError } = useAppSelector((state) => state.products);
-  const { walletBalance, products, productsStatus, productsError } = useFreshStore();
+  const { categories, categoriesStatus, categoriesError, categoriesHasLoaded } = useAppSelector((state) => state.products);
+  const { walletBalance, products, productsStatus, productsError, productsHasLoaded } = useFreshStore();
 
-  useEffect(() => {
-    if (products.length === 0 && productsStatus === 'idle') dispatch(fetchProducts());
-  }, [dispatch, products.length, productsStatus]);
-
-  useEffect(() => {
-    if (categoriesStatus === 'idle') dispatch(fetchProductCategories());
-  }, [categoriesStatus, dispatch]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!productsHasLoaded && productsStatus !== 'loading') dispatch(fetchProducts());
+      if (!categoriesHasLoaded && categoriesStatus !== 'loading') dispatch(fetchProductCategories());
+    }, [categoriesHasLoaded, categoriesStatus, dispatch, productsHasLoaded, productsStatus]),
+  );
 
   const categoryOptions = categories.filter((item) =>
     item.type === 'All' || (type === 'Dairy'
@@ -120,9 +119,7 @@ export default function ProductsScreen() {
               <Pressable
                 key={currentKey}
                 onPress={() => setCategory(currentKey)}
-                className={`flex-1 items-center justify-center rounded-[18px]  ${
-                  active ? 'bg-[#F4F7FF]' : 'bg-transparent'
-                }`}
+                className={`flex-1 items-center justify-center rounded-[18px] `}
                 style={{ minWidth: 0 }}
               >
                 <Image
@@ -133,7 +130,7 @@ export default function ProductsScreen() {
 
                 <Text
                   className={`mt-2 text-center text-[12px] font-raleway-bold ${
-                    active ? 'text-[#111827]' : 'text-[#475569]'
+                    active ? 'text-[#023E8A]' : 'text-[#475569]'
                   }`}
                 >
                   {label}

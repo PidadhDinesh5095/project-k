@@ -13,6 +13,7 @@ type ApiResponse<T> = { data: T };
 type HomeBannersState = {
   items: HomeBanner[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  hasLoaded: boolean;
 };
 
 export const fetchHomeBanners = createAsyncThunk<
@@ -31,7 +32,7 @@ export const fetchHomeBanners = createAsyncThunk<
   }
 });
 
-const initialState: HomeBannersState = { items: [], status: 'idle' };
+const initialState: HomeBannersState = { items: [], status: 'idle', hasLoaded: false };
 
 const homeBannersSlice = createSlice({
   name: 'homeBanners',
@@ -45,6 +46,7 @@ const homeBannersSlice = createSlice({
       .addCase(fetchHomeBanners.fulfilled, (state, action) => {
         state.items = action.payload;
         state.status = 'succeeded';
+        state.hasLoaded = true;
       })
       .addCase(fetchHomeBanners.rejected, (state) => {
         state.status = 'failed';

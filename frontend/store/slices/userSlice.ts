@@ -48,6 +48,7 @@ type UserState = User & {
   isRegistered: boolean | null;
   isNewUser: boolean;
   isLoggingOut: boolean;
+  hasLoaded: boolean;
 };
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -135,6 +136,7 @@ const userSlice = createSlice({
     isRegistered: null,
     isNewUser: false,
     isLoggingOut: false,
+    hasLoaded: false,
   } as UserState,
 
   reducers: {
@@ -168,6 +170,7 @@ const userSlice = createSlice({
       .addCase(sendOtp.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isRegistered = action.payload.isRegistered;
+        state.hasLoaded = true;
         state.error = null;
       })
 
@@ -183,6 +186,7 @@ const userSlice = createSlice({
 
       .addCase(verifyOtp.fulfilled, (state, action) => {
         state.isLoading = false;
+        state.hasLoaded = true;
 
         state.id = action.payload.user.id;
         state.phone = action.meta.arg.phone;

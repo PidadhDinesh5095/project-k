@@ -13,10 +13,12 @@ export function useFreshStore() {
   const profile = useAppSelector((state) => state.profile);
   const wallet = useAppSelector((state) => state.wallet);
   const subscriptionState = useAppSelector((state) => state.subscription);
-  const notifications = useAppSelector((state) => state.notifications);
+  const notifications = useAppSelector((state) => state.notifications.items);
+  const notificationsHasLoaded = useAppSelector((state) => state.notifications.hasLoaded);
   const products = useAppSelector((state) => state.products.items);
   const productsStatus = useAppSelector((state) => state.products.listStatus);
   const productsError = useAppSelector((state) => state.products.listError);
+  const productsHasLoaded = useAppSelector((state) => state.products.listHasLoaded);
   const orders = useAppSelector((state) => state.orders.items);
 
   const subscriptions = subscriptionState.items;
@@ -31,9 +33,11 @@ export function useFreshStore() {
     subscription: activeSubscription,
     subscriptions,
     notifications,
+    notificationsHasLoaded,
     products,
     productsStatus,
     productsError,
+    productsHasLoaded,
     orders,
     addWalletMoney: useCallback((amount: number) => dispatch(addWalletMoney(amount)), [dispatch]),
     addNotification: useCallback((notification: Notification) => dispatch(addNotification(notification)), [dispatch]),

@@ -2,11 +2,12 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { subscription as seededSubscription } from '@/lib/mockData';
 import { Subscription } from '@/types/fresh';
 
-type SubscriptionState = { items: Subscription[]; activeId: string | null };
+type SubscriptionState = { items: Subscription[]; activeId: string | null; hasLoaded: boolean };
 
 const initialState: SubscriptionState = {
   items: [seededSubscription],
   activeId: seededSubscription.id,
+  hasLoaded: false,
 };
 
 const subscriptionSlice = createSlice({
